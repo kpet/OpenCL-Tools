@@ -1,0 +1,48 @@
+name: Presubmit
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: Build ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          submodules: true
+      - name: Install build deps
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: sudo apt-get install libva-dev
+      - name: Install test deps
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: sudo apt-get install pocl-opencl-icd
+      - uses: actions/checkout@v2
+        with:
+          repository: KhronosGroup/OpenCL-SDK.git
+          path: sdk
+          ref: main
+          submodules: true
+      - name: Setup Ninja
+        uses: seanmiddleditch/gha-setup-ninja@master
+      - name: Build SDK
+        run: |
+          cd sdk
+          mkdir build
+          cd build
+          cmake .. -G Ninja -DOPENCL_SDK_BUILD_SAMPLES=OFF
+          ninja -j2 -v
+      - name: Build
+        run: |
+            mkdir build
+            cd build
+            cmake .. -G Ninja -DOPENCL_SDK_BUILD_DIR=$GITHUB_WORKSPACE/sdk/build/external/OpenCL-ICD-Loader/
+            ninja -j2 -v
+      - name: Tests
+        env:
+          CLTRACE_OPENCL_LIB_DIR: ${{ github.workspace }}/sdk/build/external/OpenCL-ICD-Loader/
+        run: |
+            python tests/trace/main.py
