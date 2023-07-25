@@ -47,6 +47,11 @@ public:
     }
 
     uint64_t get(const T& obj) const {
+        if constexpr (std::is_same_v<T, cl_platform_id>) {
+            if (obj == nullptr) {
+                return -1;
+            }
+        }
         if (m_objects.find(obj) != m_objects.end()) {
             auto val = m_objects.at(obj);
             debug("Object Tracker: getting instance for %p => #%llu\n", obj,

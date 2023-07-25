@@ -390,14 +390,19 @@ int main(int argc, char* argv[]) {
                     }
                 } else {
                     // Declare var to serve as input parameter
-                    auto pvar = makeCallParamVarName(param_num);
-                    auto creation_index =
-                        selectObjectVariableTracker(ttype).at(ids[0]);
-                    auto cvar =
-                        makeObjectCreationVarName(ttype, creation_index.first);
-                    m_src << obj_type_name << " " << pvar << " = " << cvar
-                          << ";" << std::endl;
-                    pstr = pvar;
+                    if (ttype == CALL_PARAM_TEMPLATE_TYPE_CL_PLATFORM_ID &&
+                        static_cast<int64_t>(ids[0]) != -1) {
+                        auto pvar = makeCallParamVarName(param_num);
+                        auto creation_index =
+                            selectObjectVariableTracker(ttype).at(ids[0]);
+                        auto cvar = makeObjectCreationVarName(
+                            ttype, creation_index.first);
+                        m_src << obj_type_name << " " << pvar << " = " << cvar
+                              << ";" << std::endl;
+                        pstr = pvar;
+                    } else {
+                        pstr = "nullptr";
+                    }
                 }
 
             } else if (ptype == CALL_PARAM_VALUE_OUT_BY_REF) {
