@@ -705,6 +705,38 @@ cl_int clEnqueueUnmapMemObject(cl_command_queue command_queue, cl_mem memobj,
     return ret;
 }
 
+cl_int clEnqueueReadBuffer(cl_command_queue command_queue, cl_mem buffer,
+                           cl_bool blocking_read, size_t offset, size_t size,
+                           void* ptr, cl_uint num_events_in_wait_list,
+                           const cl_event* event_wait_list, cl_event* event) {
+    if (!blocking_read) {
+        warn("Non-blocking read buffer will be made blocking\n");
+        trace.set_flag(Trace::flags::kImperfect);
+    }
+    // FIXME don't force command to be blocking
+    auto ret = PFN_clEnqueueReadBuffer(
+        command_queue, buffer, CL_BLOCKING, offset, size, ptr,
+        num_events_in_wait_list, event_wait_list, event);
+
+    Call call(oclapi::command::ENQUEUE_READ_BUFFER);
+
+    call.record_object_use(command_queue);
+    call.record_object_use(buffer);
+    call.record_value(blocking_read);
+    call.record_value(offset);
+    call.record_value(size);
+    call.record_array(size, static_cast<char*>(ptr));
+    call.record_value(num_events_in_wait_list);
+    call.record_object_use(num_events_in_wait_list,
+                           const_cast<cl_event*>(event_wait_list));
+    call.record_optional_object_creation(event != nullptr ? 1 : 0, event);
+    call.record_return_value(ret);
+
+    trace.record(call);
+
+    return ret;
+}
+
 cl_int clGetEventProfilingInfo(cl_event event, cl_profiling_info param_name,
                                size_t param_value_size, void* param_value,
                                size_t* param_value_size_ret) {
