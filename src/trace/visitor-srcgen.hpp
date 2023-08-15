@@ -443,7 +443,14 @@ int main(int argc, char* argv[]) {
                 auto present =
                     static_cast<CallParamCallback*>(param)->present();
                 if (present) {
-                    abort(); // TODO
+                    auto obj_type_name = "CL_CALLBACK*";
+                    auto pvar = makeCallParamVarName(param_num);
+                    m_src << obj_type_name << " " << pvar << " = "
+                          << "nullptr"
+                          << ";";
+                    m_src << " // UNIMPLEMENTED: CALL_PARAM_CALLBACK"
+                          << std::endl;
+                    pstr = pvar;
                 } else {
                     pstr = "nullptr";
                 }
