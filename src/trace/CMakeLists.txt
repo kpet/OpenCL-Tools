@@ -30,6 +30,7 @@ ocltools_add_preload_library(ocltools-trace cltrace.cpp trace-stubs.cpp
 target_compile_options(ocltools-trace PRIVATE "-Wno-attributes")
 target_include_directories(ocltools-trace PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 add_dependencies(ocltools-trace generate-trace-stubs)
+add_dependencies(ocltools-trace generate-ocl-api)
 
 ocltools_add_tool(cltrace ocltrace.cpp trace.cpp)
 add_dependencies(cltrace generate-ocltools-loader)
