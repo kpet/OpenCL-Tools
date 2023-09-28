@@ -392,7 +392,12 @@ int main(int argc, char* argv[]) {
                     // Declare var to serve as input parameter
                     if (static_cast<int64_t>(ids[0]) == -1) {
                         assert(ttype ==
-                               CALL_PARAM_TEMPLATE_TYPE_CL_PLATFORM_ID);
+                                   CALL_PARAM_TEMPLATE_TYPE_CL_PLATFORM_ID ||
+                               ttype == CALL_PARAM_TEMPLATE_TYPE_CL_CONTEXT);
+                        pstr = "nullptr";
+                    } else if (ids.empty()) {
+                        assert(ttype == CALL_PARAM_TEMPLATE_TYPE_CL_DEVICE_ID ||
+                               ttype == CALL_PARAM_TEMPLATE_TYPE_CL_EVENT);
                         pstr = "nullptr";
                     } else {
                         auto pvar = makeCallParamVarName(param_num);
