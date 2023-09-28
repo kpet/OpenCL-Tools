@@ -459,7 +459,14 @@ int main(int argc, char* argv[]) {
                 auto present =
                     static_cast<CallParamCallbackData*>(param)->present();
                 if (present) {
-                    abort(); // TODO
+                    auto obj_type_name = "CL_CALLBACK_DATA*";
+                    auto pvar = makeCallParamVarName(param_num);
+                    m_src << obj_type_name << " " << pvar << " = "
+                          << "nullptr"
+                          << ";";
+                    m_src << " // UNIMPLEMENTED: CALL_PARAM_CALLBACK_DATA"
+                          << std::endl;
+                    pstr = pvar;
                 } else {
                     pstr = "nullptr";
                 }
