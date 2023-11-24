@@ -36,7 +36,7 @@ CXX_COMPILER = 'g++'
 def run_cltrace(args, cwd=None):
     env = dict(os.environ)
     env['LD_LIBRARY_PATH'] = BUILD_DIR
-    debug = ['gdb','-ex','run','-ex','bt','-ex','quit','--args']
+    debug = ['gdb','-ex','set follow-fork-mode child','-ex','run','-ex','bt','-ex','quit','--args']
     cmd = debug + [CLTRACE] + args
     res = subprocess.run(cmd, capture_output=True, env=env, cwd=cwd)
     return res
