@@ -57,8 +57,8 @@ TEST_F(WithCommandQueue, Simple) {
     Finish();
 
     // Map the buffer
-    auto data = EnqueueMapBuffer<cl_uint>(buffer, CL_TRUE, CL_MAP_READ, 0,
-                                          BUFFER_SIZE);
+    auto data =
+        EnqueueMapBuffer<cl_uint>(buffer, CL_TRUE, CL_MAP_READ, 0, BUFFER_SIZE);
 
     // Check the expected result
     for (cl_uint i = 0; i < BUFFER_SIZE / sizeof(cl_uint); ++i) {

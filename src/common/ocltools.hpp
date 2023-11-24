@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #pragma once
 
 #include <functional>
 #include <string>
 #include <vector>
 
-bool run_binary_with_preload(const std::string &app, const std::vector<std::string> &args,
-                             const std::string& preload, const std::vector<std::string>& env,
+bool run_binary_with_preload(const std::string& app,
+                             const std::vector<std::string>& args,
+                             const std::string& preload,
+                             const std::vector<std::string>& env,
                              std::function<bool()> parent_fn = nullptr);

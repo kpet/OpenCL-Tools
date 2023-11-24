@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #pragma once
 
 enum loglevel
@@ -39,9 +38,13 @@ void ocltools_log(loglevel level, const char* fmt, ...) CHECK_PRINTF(2, 3);
 #define OCLTOOLS_LOG_PREFIX
 #endif
 
-#define fatal(fmt, ...) ocltools_log(loglevel::fatal, OCLTOOLS_LOG_PREFIX fmt "\n", ##__VA_ARGS__)
-#define error(fmt, ...) ocltools_log(loglevel::error, OCLTOOLS_LOG_PREFIX fmt "\n", ##__VA_ARGS__)
-#define warn(fmt, ...) ocltools_log(loglevel::warn, OCLTOOLS_LOG_PREFIX fmt "\n", ##__VA_ARGS__)
-#define info(fmt, ...) ocltools_log(loglevel::info, OCLTOOLS_LOG_PREFIX fmt "\n", ##__VA_ARGS__)
-#define debug(fmt, ...) ocltools_log(loglevel::debug, OCLTOOLS_LOG_PREFIX fmt "\n", ##__VA_ARGS__)
-
+#define fatal(fmt, ...)                                                        \
+    ocltools_log(loglevel::fatal, OCLTOOLS_LOG_PREFIX fmt "\n", ##__VA_ARGS__)
+#define error(fmt, ...)                                                        \
+    ocltools_log(loglevel::error, OCLTOOLS_LOG_PREFIX fmt "\n", ##__VA_ARGS__)
+#define warn(fmt, ...)                                                         \
+    ocltools_log(loglevel::warn, OCLTOOLS_LOG_PREFIX fmt "\n", ##__VA_ARGS__)
+#define info(fmt, ...)                                                         \
+    ocltools_log(loglevel::info, OCLTOOLS_LOG_PREFIX fmt "\n", ##__VA_ARGS__)
+#define debug(fmt, ...)                                                        \
+    ocltools_log(loglevel::debug, OCLTOOLS_LOG_PREFIX fmt "\n", ##__VA_ARGS__)

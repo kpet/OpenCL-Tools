@@ -19,22 +19,22 @@
 #include "call.hpp"
 
 struct TraceVisitor {
-   
-    void visit(const Trace &trace) {
+
+    void visit(const Trace& trace) {
         preVisit(trace);
         visitHeader();
-        for (auto &call : trace.calls()) {
+        for (auto& call : trace.calls()) {
             visitCall(call);
-            for (auto &param : call.params()) {
+            for (auto& param : call.params()) {
                 visitCallParam(param);
             }
         }
         postVisit();
     }
 
-    virtual void preVisit(const Trace &trace) {};
-    virtual void postVisit() {};
-    virtual void visitHeader() {}; // TODO define header
-    virtual void visitCall(const Call &call) {};
-    virtual void visitCallParam(const std::unique_ptr<CallParam> &param) {};
+    virtual void preVisit(const Trace& trace){};
+    virtual void postVisit(){};
+    virtual void visitHeader(){}; // TODO define header
+    virtual void visitCall(const Call& call){};
+    virtual void visitCallParam(const std::unique_ptr<CallParam>& param){};
 };

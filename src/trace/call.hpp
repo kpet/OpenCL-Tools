@@ -12,18 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #pragma once
 
 #include "cl_headers.hpp"
 
-#include <iostream>
 #include <cstring>
+#include <iostream>
 
 #include "ocl-api.hpp"
 
-#include "serialize.hpp"
 #include "log.hpp"
+#include "serialize.hpp"
 
 #include <memory>
 #include <unordered_map>
@@ -35,14 +34,14 @@ using namespace oclapi;
 // Object tracking
 //
 
-template<typename T>
-class ObjectTracker {
+template <typename T> class ObjectTracker {
 
 public:
     ObjectTracker() : m_instances(0) {}
 
     uint64_t add(const T& obj) {
-        debug("Object Tracker: tracking %p as #%llu\n", obj, (unsigned long long)m_instances);
+        debug("Object Tracker: tracking %p as #%llu\n", obj,
+              (unsigned long long)m_instances);
         m_objects[obj] = m_instances;
         return m_instances++;
     }
@@ -50,7 +49,8 @@ public:
     uint64_t get(const T& obj) const {
         if (m_objects.find(obj) != m_objects.end()) {
             auto val = m_objects.at(obj);
-            debug("Object Tracker: getting instance for %p => #%llu\n", obj, (unsigned long long)val);
+            debug("Object Tracker: getting instance for %p => #%llu\n", obj,
+                  (unsigned long long)val);
             return val;
         }
         fatal("Object Tracker: %p is not tracked\n", obj);
@@ -66,24 +66,26 @@ private:
     std::unordered_map<T, uint64_t> m_objects;
 };
 
-template<typename T>
-class ReplayObjectTracker {
+template <typename T> class ReplayObjectTracker {
 
 public:
     ReplayObjectTracker() {}
 
     void add(uint64_t id, T obj) {
-        debug("Replay object tracker: ID #%llu now alive as %p\n", static_cast<unsigned long long>(id), obj);
+        debug("Replay object tracker: ID #%llu now alive as %p\n",
+              static_cast<unsigned long long>(id), obj);
         m_objects[id] = obj;
     }
 
     T get(uint64_t id) const {
         if (m_objects.find(id) != m_objects.end()) {
             auto val = m_objects.at(id);
-            debug("Replay object tracker: getting pointer for #%llu => %p\n", static_cast<unsigned long long>(id), val);
+            debug("Replay object tracker: getting pointer for #%llu => %p\n",
+                  static_cast<unsigned long long>(id), val);
             return val;
         }
-        fatal("Unknown instance for #%llu\n", static_cast<unsigned long long>(id));
+        fatal("Unknown instance for #%llu\n",
+              static_cast<unsigned long long>(id));
         return 0;
     }
 
@@ -100,21 +102,41 @@ static ObjectTracker<cl_kernel> gTracker_kernels;
 static ObjectTracker<cl_mem> gTracker_mems;
 static ObjectTracker<cl_event> gTracker_events;
 
-template<typename T> auto& object_capture_tracker() = delete;
-template<> inline auto& object_capture_tracker<cl_platform_id>() { return gTracker_platforms; }
-template<> inline auto& object_capture_tracker<cl_device_id>() { return gTracker_devices; }
-template<> inline auto& object_capture_tracker<const cl_device_id>() { return gTracker_devices; }
-template<> inline auto& object_capture_tracker<cl_context>() { return gTracker_contexts; }
-template<> inline auto& object_capture_tracker<cl_command_queue>() { return gTracker_queues; }
-template<> inline auto& object_capture_tracker<cl_program>() { return gTracker_programs; }
-template<> inline auto& object_capture_tracker<cl_kernel>() { return gTracker_kernels; }
-template<> inline auto& object_capture_tracker<cl_mem>() { return gTracker_mems; }
-template<> inline auto& object_capture_tracker<cl_event>() { return gTracker_events; }
+template <typename T> auto& object_capture_tracker() = delete;
+template <> inline auto& object_capture_tracker<cl_platform_id>() {
+    return gTracker_platforms;
+}
+template <> inline auto& object_capture_tracker<cl_device_id>() {
+    return gTracker_devices;
+}
+template <> inline auto& object_capture_tracker<const cl_device_id>() {
+    return gTracker_devices;
+}
+template <> inline auto& object_capture_tracker<cl_context>() {
+    return gTracker_contexts;
+}
+template <> inline auto& object_capture_tracker<cl_command_queue>() {
+    return gTracker_queues;
+}
+template <> inline auto& object_capture_tracker<cl_program>() {
+    return gTracker_programs;
+}
+template <> inline auto& object_capture_tracker<cl_kernel>() {
+    return gTracker_kernels;
+}
+template <> inline auto& object_capture_tracker<cl_mem>() {
+    return gTracker_mems;
+}
+template <> inline auto& object_capture_tracker<cl_event>() {
+    return gTracker_events;
+}
 
 static ReplayObjectTracker<cl_platform_id> gReplayTracker_platforms;
 
-template<typename T> auto& object_replay_tracker() = delete;
-template<> inline auto& object_replay_tracker<cl_platform_id>() { return gReplayTracker_platforms; }
+template <typename T> auto& object_replay_tracker() = delete;
+template <> inline auto& object_replay_tracker<cl_platform_id>() {
+    return gReplayTracker_platforms;
+}
 
 //
 // Mapped memory tracking
@@ -124,24 +146,25 @@ struct MemObjectMappingTracker {
     MemObjectMappingTracker() : m_mapping_id(0) {}
 
     uint64_t add(void* ptr) {
-        debug("Map pointer tracker: tracking %p as #%llu\n", ptr, (unsigned long long)m_mapping_id);
+        debug("Map pointer tracker: tracking %p as #%llu\n", ptr,
+              (unsigned long long)m_mapping_id);
         m_pointers[ptr] = m_mapping_id;
         return m_mapping_id++;
     }
 
     uint64_t get(void* ptr) const {
         if (m_pointers.count(ptr) != 0) {
-            auto id  = m_pointers.at(ptr);
-            debug("Map pointer tracker: getting id for %p => #%llu\n", ptr, (unsigned long long)id);
+            auto id = m_pointers.at(ptr);
+            debug("Map pointer tracker: getting id for %p => #%llu\n", ptr,
+                  (unsigned long long)id);
             return id;
         }
         fatal("Unknown map pointer %p\n", ptr);
         return 0;
     }
 
-    bool is_tracked(void* ptr) const {
-        return m_pointers.count(ptr) != 0;
-    }
+    bool is_tracked(void* ptr) const { return m_pointers.count(ptr) != 0; }
+
 private:
     uint64_t m_mapping_id;
     std::unordered_map<void*, uint64_t> m_pointers;
@@ -149,12 +172,12 @@ private:
 
 static MemObjectMappingTracker gMemObjectMappingTracker;
 
-
 //
 // Call parameters
 //
 
-enum CallParamType : uint32_t {
+enum CallParamType : uint32_t
+{
     CALL_PARAM_VALUE,
     CALL_PARAM_OPTIONAL_OBJECT_CREATION,
     CALL_PARAM_VALUE_OUT_BY_REF,
@@ -169,7 +192,8 @@ enum CallParamType : uint32_t {
     CALL_PARAM_MAP_POINTER_USE,
 };
 
-enum CallParamTemplateType : uint32_t {
+enum CallParamTemplateType : uint32_t
+{
     CALL_PARAM_TEMPLATE_TYPE_NONE,
     CALL_PARAM_TEMPLATE_TYPE_VOID,
     CALL_PARAM_TEMPLATE_TYPE_CHAR,
@@ -191,55 +215,99 @@ enum CallParamTemplateType : uint32_t {
     CALL_PARAM_TEMPLATE_TYPE_CL_IMAGE_DESC,
 };
 
-template<typename T> CallParamTemplateType call_param_template_type() = delete;
-template<> inline CallParamTemplateType call_param_template_type<void>() { return CALL_PARAM_TEMPLATE_TYPE_VOID; }
-template<> inline CallParamTemplateType call_param_template_type<char>() { return CALL_PARAM_TEMPLATE_TYPE_CHAR; }
-template<> inline CallParamTemplateType call_param_template_type<cl_int>() { return CALL_PARAM_TEMPLATE_TYPE_CL_INT; }
-template<> inline CallParamTemplateType call_param_template_type<cl_uint>() { return CALL_PARAM_TEMPLATE_TYPE_CL_UINT; }
-template<> inline CallParamTemplateType call_param_template_type<cl_long>() { return CALL_PARAM_TEMPLATE_TYPE_CL_LONG; }
-template<> inline CallParamTemplateType call_param_template_type<cl_ulong>() { return CALL_PARAM_TEMPLATE_TYPE_CL_ULONG; }
-template<> inline CallParamTemplateType call_param_template_type<cl_platform_id>() { return CALL_PARAM_TEMPLATE_TYPE_CL_PLATFORM_ID; }
-template<> inline CallParamTemplateType call_param_template_type<cl_device_id>() { return CALL_PARAM_TEMPLATE_TYPE_CL_DEVICE_ID; }
-template<> inline CallParamTemplateType call_param_template_type<const cl_device_id>() { return CALL_PARAM_TEMPLATE_TYPE_CL_DEVICE_ID; }
-template<> inline CallParamTemplateType call_param_template_type<cl_context>() { return CALL_PARAM_TEMPLATE_TYPE_CL_CONTEXT; }
-template<> inline CallParamTemplateType call_param_template_type<cl_command_queue>() { return CALL_PARAM_TEMPLATE_TYPE_CL_COMMANDQUEUE; }
-template<> inline CallParamTemplateType call_param_template_type<cl_program>() { return CALL_PARAM_TEMPLATE_TYPE_CL_PROGRAM; }
-template<> inline CallParamTemplateType call_param_template_type<cl_kernel>() { return CALL_PARAM_TEMPLATE_TYPE_CL_KERNEL; }
-template<> inline CallParamTemplateType call_param_template_type<cl_mem>() { return CALL_PARAM_TEMPLATE_TYPE_CL_MEM; }
-template<> inline CallParamTemplateType call_param_template_type<cl_event>() { return CALL_PARAM_TEMPLATE_TYPE_CL_EVENT; }
-template<> inline CallParamTemplateType call_param_template_type<cl_image_format>() { return CALL_PARAM_TEMPLATE_TYPE_CL_IMAGE_FORMAT; }
-template<> inline CallParamTemplateType call_param_template_type<cl_image_desc>() { return CALL_PARAM_TEMPLATE_TYPE_CL_IMAGE_DESC; }
+template <typename T> CallParamTemplateType call_param_template_type() = delete;
+template <> inline CallParamTemplateType call_param_template_type<void>() {
+    return CALL_PARAM_TEMPLATE_TYPE_VOID;
+}
+template <> inline CallParamTemplateType call_param_template_type<char>() {
+    return CALL_PARAM_TEMPLATE_TYPE_CHAR;
+}
+template <> inline CallParamTemplateType call_param_template_type<cl_int>() {
+    return CALL_PARAM_TEMPLATE_TYPE_CL_INT;
+}
+template <> inline CallParamTemplateType call_param_template_type<cl_uint>() {
+    return CALL_PARAM_TEMPLATE_TYPE_CL_UINT;
+}
+template <> inline CallParamTemplateType call_param_template_type<cl_long>() {
+    return CALL_PARAM_TEMPLATE_TYPE_CL_LONG;
+}
+template <> inline CallParamTemplateType call_param_template_type<cl_ulong>() {
+    return CALL_PARAM_TEMPLATE_TYPE_CL_ULONG;
+}
+template <>
+inline CallParamTemplateType call_param_template_type<cl_platform_id>() {
+    return CALL_PARAM_TEMPLATE_TYPE_CL_PLATFORM_ID;
+}
+template <>
+inline CallParamTemplateType call_param_template_type<cl_device_id>() {
+    return CALL_PARAM_TEMPLATE_TYPE_CL_DEVICE_ID;
+}
+template <>
+inline CallParamTemplateType call_param_template_type<const cl_device_id>() {
+    return CALL_PARAM_TEMPLATE_TYPE_CL_DEVICE_ID;
+}
+template <>
+inline CallParamTemplateType call_param_template_type<cl_context>() {
+    return CALL_PARAM_TEMPLATE_TYPE_CL_CONTEXT;
+}
+template <>
+inline CallParamTemplateType call_param_template_type<cl_command_queue>() {
+    return CALL_PARAM_TEMPLATE_TYPE_CL_COMMANDQUEUE;
+}
+template <>
+inline CallParamTemplateType call_param_template_type<cl_program>() {
+    return CALL_PARAM_TEMPLATE_TYPE_CL_PROGRAM;
+}
+template <> inline CallParamTemplateType call_param_template_type<cl_kernel>() {
+    return CALL_PARAM_TEMPLATE_TYPE_CL_KERNEL;
+}
+template <> inline CallParamTemplateType call_param_template_type<cl_mem>() {
+    return CALL_PARAM_TEMPLATE_TYPE_CL_MEM;
+}
+template <> inline CallParamTemplateType call_param_template_type<cl_event>() {
+    return CALL_PARAM_TEMPLATE_TYPE_CL_EVENT;
+}
+template <>
+inline CallParamTemplateType call_param_template_type<cl_image_format>() {
+    return CALL_PARAM_TEMPLATE_TYPE_CL_IMAGE_FORMAT;
+}
+template <>
+inline CallParamTemplateType call_param_template_type<cl_image_desc>() {
+    return CALL_PARAM_TEMPLATE_TYPE_CL_IMAGE_DESC;
+}
 
-static std::unordered_map<CallParamTemplateType, const char*> gTypeEnumToName = {
-    { CALL_PARAM_TEMPLATE_TYPE_VOID, "void" },
-    { CALL_PARAM_TEMPLATE_TYPE_CHAR, "char" },
-    { CALL_PARAM_TEMPLATE_TYPE_SIZET, "size_t" },
-    { CALL_PARAM_TEMPLATE_TYPE_INTPTR_T, "intptr_t" },
-    { CALL_PARAM_TEMPLATE_TYPE_CL_INT, "cl_int" },
-    { CALL_PARAM_TEMPLATE_TYPE_CL_UINT, "cl_uint" },
-    { CALL_PARAM_TEMPLATE_TYPE_CL_LONG, "cl_long" },
-    { CALL_PARAM_TEMPLATE_TYPE_CL_ULONG, "cl_ulong" },
-    { CALL_PARAM_TEMPLATE_TYPE_CL_PLATFORM_ID, "cl_platform_id" },
-    { CALL_PARAM_TEMPLATE_TYPE_CL_DEVICE_ID, "cl_device_id" },
-    { CALL_PARAM_TEMPLATE_TYPE_CL_CONTEXT, "cl_context" },
-    { CALL_PARAM_TEMPLATE_TYPE_CL_COMMANDQUEUE, "cl_command_queue" },
-    { CALL_PARAM_TEMPLATE_TYPE_CL_PROGRAM, "cl_program" },
-    { CALL_PARAM_TEMPLATE_TYPE_CL_KERNEL, "cl_kernel" },
-    { CALL_PARAM_TEMPLATE_TYPE_CL_MEM, "cl_mem" },
-    { CALL_PARAM_TEMPLATE_TYPE_CL_EVENT, "cl_event" },
-    { CALL_PARAM_TEMPLATE_TYPE_CL_IMAGE_FORMAT, "cl_image_format" },
-    { CALL_PARAM_TEMPLATE_TYPE_CL_IMAGE_DESC, "cl_image_desc" },
+static std::unordered_map<CallParamTemplateType, const char*> gTypeEnumToName =
+    {
+        {CALL_PARAM_TEMPLATE_TYPE_VOID, "void"},
+        {CALL_PARAM_TEMPLATE_TYPE_CHAR, "char"},
+        {CALL_PARAM_TEMPLATE_TYPE_SIZET, "size_t"},
+        {CALL_PARAM_TEMPLATE_TYPE_INTPTR_T, "intptr_t"},
+        {CALL_PARAM_TEMPLATE_TYPE_CL_INT, "cl_int"},
+        {CALL_PARAM_TEMPLATE_TYPE_CL_UINT, "cl_uint"},
+        {CALL_PARAM_TEMPLATE_TYPE_CL_LONG, "cl_long"},
+        {CALL_PARAM_TEMPLATE_TYPE_CL_ULONG, "cl_ulong"},
+        {CALL_PARAM_TEMPLATE_TYPE_CL_PLATFORM_ID, "cl_platform_id"},
+        {CALL_PARAM_TEMPLATE_TYPE_CL_DEVICE_ID, "cl_device_id"},
+        {CALL_PARAM_TEMPLATE_TYPE_CL_CONTEXT, "cl_context"},
+        {CALL_PARAM_TEMPLATE_TYPE_CL_COMMANDQUEUE, "cl_command_queue"},
+        {CALL_PARAM_TEMPLATE_TYPE_CL_PROGRAM, "cl_program"},
+        {CALL_PARAM_TEMPLATE_TYPE_CL_KERNEL, "cl_kernel"},
+        {CALL_PARAM_TEMPLATE_TYPE_CL_MEM, "cl_mem"},
+        {CALL_PARAM_TEMPLATE_TYPE_CL_EVENT, "cl_event"},
+        {CALL_PARAM_TEMPLATE_TYPE_CL_IMAGE_FORMAT, "cl_image_format"},
+        {CALL_PARAM_TEMPLATE_TYPE_CL_IMAGE_DESC, "cl_image_desc"},
 };
 
 static const char* call_param_template_type_name(CallParamTemplateType type) {
     return gTypeEnumToName.at(type);
 }
 
-static CallParamTemplateType tracked_kernel_argument_object_type(void *obj) {
+static CallParamTemplateType tracked_kernel_argument_object_type(void* obj) {
     // TODO samplers
     if (object_capture_tracker<cl_mem>().is_tracked(static_cast<cl_mem>(obj))) {
         return CALL_PARAM_TEMPLATE_TYPE_CL_MEM;
-    } else if (object_capture_tracker<cl_command_queue>().is_tracked(static_cast<cl_command_queue>(obj))) {
+    } else if (object_capture_tracker<cl_command_queue>().is_tracked(
+                   static_cast<cl_command_queue>(obj))) {
         return CALL_PARAM_TEMPLATE_TYPE_CL_COMMANDQUEUE;
     } else {
         return CALL_PARAM_TEMPLATE_TYPE_NONE;
@@ -248,36 +316,31 @@ static CallParamTemplateType tracked_kernel_argument_object_type(void *obj) {
 
 struct CallParam {
 
-    CallParam(CallParamType type, CallParamTemplateType ttype) : m_type(type), m_ttype(ttype) {}
+    CallParam(CallParamType type, CallParamTemplateType ttype)
+        : m_type(type), m_ttype(ttype) {}
 
-    CallParamType type() const {
-        return m_type;
-    }
+    CallParamType type() const { return m_type; }
 
-    CallParamTemplateType ttype() const {
-        return m_ttype;
-    }
+    CallParamTemplateType ttype() const { return m_ttype; }
 
     virtual void print(std::ostream& out) const = 0;
 
-    virtual void serialize(std::ostream &os) const = 0;
+    virtual void serialize(std::ostream& os) const = 0;
 
     virtual size_t output_memory_requirements() const { return 0; }
+
 private:
     CallParamType m_type;
     CallParamTemplateType m_ttype;
 };
 
-template<typename T>
-struct CallParamValue : public CallParam {
+template <typename T> struct CallParamValue : public CallParam {
 
-    CallParamValue(std::istream &is) : CallParamValue() {
+    CallParamValue(std::istream& is) : CallParamValue() {
         m_value = ::deserialize<T>(is);
     }
 
-    CallParamValue(T &value) : CallParamValue() {
-        m_value = value;
-    }
+    CallParamValue(T& value) : CallParamValue() { m_value = value; }
 
     T value() const { return m_value; }
 
@@ -285,21 +348,23 @@ struct CallParamValue : public CallParam {
         out << "Value param: " << m_value << std::endl;
     }
 
-    void serialize(std::ostream &os) const override {
+    void serialize(std::ostream& os) const override {
         ::serialize(os, CALL_PARAM_VALUE);
         ::serialize(os, call_param_template_type<T>());
         ::serialize(os, m_value);
     }
 
 private:
-    CallParamValue() : CallParam(CALL_PARAM_VALUE, call_param_template_type<T>()) {}
+    CallParamValue()
+        : CallParam(CALL_PARAM_VALUE, call_param_template_type<T>()) {}
     T m_value;
 };
 
-template<typename T>
+template <typename T>
 struct CallParamOptionalObjectCreation : public CallParam {
 
-    CallParamOptionalObjectCreation(std::istream &is) : CallParamOptionalObjectCreation() {
+    CallParamOptionalObjectCreation(std::istream& is)
+        : CallParamOptionalObjectCreation() {
         m_create = ::deserialize<bool>(is);
         uint32_t num_ids = ::deserialize<uint32_t>(is);
         for (uint32_t i = 0; i < num_ids; i++) {
@@ -308,23 +373,27 @@ struct CallParamOptionalObjectCreation : public CallParam {
         }
     }
 
-    CallParamOptionalObjectCreation(bool create, std::vector<uint64_t> &&object_ids)
-    : CallParamOptionalObjectCreation() {
+    CallParamOptionalObjectCreation(bool create,
+                                    std::vector<uint64_t>&& object_ids)
+        : CallParamOptionalObjectCreation() {
         m_create = create;
         m_object_ids = std::move(object_ids);
     }
 
-    size_t output_memory_requirements() const { return m_object_ids.size() * sizeof(void*); }
+    size_t output_memory_requirements() const {
+        return m_object_ids.size() * sizeof(void*);
+    }
 
     const std::vector<uint64_t>& object_ids() const { return m_object_ids; }
 
     bool create() const { return m_create; }
 
     void print(std::ostream& out) const override {
-        out << "Object creation param: num = " << m_object_ids.size() << std::endl;
+        out << "Object creation param: num = " << m_object_ids.size()
+            << std::endl;
     }
 
-    void serialize(std::ostream &os) const {
+    void serialize(std::ostream& os) const {
         ::serialize(os, CALL_PARAM_OPTIONAL_OBJECT_CREATION);
         ::serialize(os, call_param_template_type<T>());
         ::serialize(os, m_create);
@@ -336,19 +405,21 @@ struct CallParamOptionalObjectCreation : public CallParam {
     }
 
 private:
-    CallParamOptionalObjectCreation() : CallParam(CALL_PARAM_OPTIONAL_OBJECT_CREATION, call_param_template_type<T>()) {}
+    CallParamOptionalObjectCreation()
+        : CallParam(CALL_PARAM_OPTIONAL_OBJECT_CREATION,
+                    call_param_template_type<T>()) {}
     bool m_create;
     std::vector<uint64_t> m_object_ids;
 };
 
-template<typename T>
-struct CallParamValueOutByRef : public CallParam {
+template <typename T> struct CallParamValueOutByRef : public CallParam {
 
-    CallParamValueOutByRef(std::istream &is) : CallParamValueOutByRef() {
+    CallParamValueOutByRef(std::istream& is) : CallParamValueOutByRef() {
         m_null_pointer = ::deserialize<bool>(is);
         uint32_t size = ::deserialize<uint32_t>(is);
         for (uint32_t i = 0; i < size; i++) {
-            m_memory.push_back(::deserialize<char>(is)); // FIXME this will be terribly slow
+            m_memory.push_back(
+                ::deserialize<char>(is)); // FIXME this will be terribly slow
         }
     }
 
@@ -365,10 +436,11 @@ struct CallParamValueOutByRef : public CallParam {
     size_t output_memory_requirements() const { return m_memory.size(); }
 
     void print(std::ostream& out) const override {
-        out << "Value out by ref param: null pointer = " << m_null_pointer << ", size = " << m_memory.size() << std::endl;
+        out << "Value out by ref param: null pointer = " << m_null_pointer
+            << ", size = " << m_memory.size() << std::endl;
     }
 
-    void serialize(std::ostream &os) const {
+    void serialize(std::ostream& os) const {
         ::serialize(os, CALL_PARAM_VALUE_OUT_BY_REF);
         ::serialize(os, call_param_template_type<T>());
         ::serialize(os, m_null_pointer);
@@ -381,15 +453,16 @@ struct CallParamValueOutByRef : public CallParam {
     }
 
 private:
-    CallParamValueOutByRef() : CallParam(CALL_PARAM_VALUE_OUT_BY_REF, call_param_template_type<T>()) {}
+    CallParamValueOutByRef()
+        : CallParam(CALL_PARAM_VALUE_OUT_BY_REF,
+                    call_param_template_type<T>()) {}
     bool m_null_pointer;
     std::vector<char> m_memory;
 };
 
-template<typename T>
-struct CallParamObjectUse : public CallParam {
+template <typename T> struct CallParamObjectUse : public CallParam {
 
-    CallParamObjectUse(std::istream &is) : CallParamObjectUse() {
+    CallParamObjectUse(std::istream& is) : CallParamObjectUse() {
         m_multiple = ::deserialize<bool>(is);
         auto num_objects = ::deserialize<uint32_t>(is);
         for (uint32_t i = 0; i < num_objects; i++) {
@@ -403,7 +476,8 @@ struct CallParamObjectUse : public CallParam {
         m_object_ids.push_back(id);
     }
 
-    CallParamObjectUse(uint32_t num_objects, T* objects) : CallParamObjectUse() {
+    CallParamObjectUse(uint32_t num_objects, T* objects)
+        : CallParamObjectUse() {
         m_multiple = true;
         for (uint32_t i = 0; i < num_objects; i++) {
             auto id = object_capture_tracker<T>().get(objects[i]);
@@ -421,10 +495,10 @@ struct CallParamObjectUse : public CallParam {
             out << sep << id;
             sep = ",";
         }
-        out << "]"  << std::endl;
+        out << "]" << std::endl;
     }
 
-    void serialize(std::ostream &os) const {
+    void serialize(std::ostream& os) const {
         ::serialize(os, CALL_PARAM_OBJECT_USE);
         ::serialize(os, call_param_template_type<T>());
         ::serialize(os, m_multiple);
@@ -434,14 +508,16 @@ struct CallParamObjectUse : public CallParam {
             ::serialize(os, id);
         }
     }
+
 private:
-    CallParamObjectUse() : CallParam(CALL_PARAM_OBJECT_USE, call_param_template_type<T>()) {}
+    CallParamObjectUse()
+        : CallParam(CALL_PARAM_OBJECT_USE, call_param_template_type<T>()) {}
     bool m_multiple;
     std::vector<uint64_t> m_object_ids;
 };
 
 struct CallParamProperties : public CallParam {
-    CallParamProperties(std::istream &is) : CallParamProperties(false) {
+    CallParamProperties(std::istream& is) : CallParamProperties(false) {
         m_has_list = ::deserialize<bool>(is);
         auto count = ::deserialize<uint32_t>(is);
         for (uint32_t i = 0; i < count; i++) {
@@ -449,15 +525,14 @@ struct CallParamProperties : public CallParam {
         }
     }
 
-    CallParamProperties(std::vector<intptr_t> &&props) : CallParamProperties(true) {
+    CallParamProperties(std::vector<intptr_t>&& props)
+        : CallParamProperties(true) {
         m_properties = std::move(props);
     }
 
     CallParamProperties() : CallParamProperties(false) {}
 
-    const std::vector<intptr_t>& properties() const {
-        return m_properties;
-    }
+    const std::vector<intptr_t>& properties() const { return m_properties; }
 
     bool has_list() const { return m_has_list; }
 
@@ -465,7 +540,7 @@ struct CallParamProperties : public CallParam {
         out << "Properties (TODO)" << std::endl;
     }
 
-    void serialize(std::ostream &os) const {
+    void serialize(std::ostream& os) const {
         ::serialize(os, CALL_PARAM_PROPERTIES);
         ::serialize(os, call_param_template_type<intptr_t>());
         ::serialize(os, m_has_list);
@@ -477,8 +552,9 @@ struct CallParamProperties : public CallParam {
     }
 
 private:
-    CallParamProperties(bool has_list) :
-        CallParam(CALL_PARAM_PROPERTIES, call_param_template_type<intptr_t>()) {
+    CallParamProperties(bool has_list)
+        : CallParam(CALL_PARAM_PROPERTIES,
+                    call_param_template_type<intptr_t>()) {
         m_has_list = has_list;
     }
     bool m_has_list;
@@ -486,7 +562,7 @@ private:
 };
 
 struct CallParamCallback : public CallParam {
-    CallParamCallback(std::istream &is) : CallParamCallback() {
+    CallParamCallback(std::istream& is) : CallParamCallback() {
         m_cbtype = ::deserialize<ocl_callback>(is);
         m_present = ::deserialize<bool>(is);
     }
@@ -497,15 +573,13 @@ struct CallParamCallback : public CallParam {
     }
 
     bool present() const { return m_present; }
-    ocl_callback callback_type() const  {
-        return m_cbtype;
-    }
+    ocl_callback callback_type() const { return m_cbtype; }
 
     void print(std::ostream& out) const override {
         out << "Callback (TODO)" << std::endl;
     }
 
-    void serialize(std::ostream &os) const {
+    void serialize(std::ostream& os) const {
         ::serialize(os, CALL_PARAM_CALLBACK);
         ::serialize(os, CALL_PARAM_TEMPLATE_TYPE_NONE);
         ::serialize(os, m_cbtype);
@@ -513,13 +587,14 @@ struct CallParamCallback : public CallParam {
     }
 
 private:
-    CallParamCallback() : CallParam(CALL_PARAM_CALLBACK, CALL_PARAM_TEMPLATE_TYPE_NONE) {}
+    CallParamCallback()
+        : CallParam(CALL_PARAM_CALLBACK, CALL_PARAM_TEMPLATE_TYPE_NONE) {}
     ocl_callback m_cbtype;
     bool m_present;
 };
 
 struct CallParamCallbackData : public CallParam {
-    CallParamCallbackData(std::istream &is) : CallParamCallbackData() {
+    CallParamCallbackData(std::istream& is) : CallParamCallbackData() {
         m_present = ::deserialize<bool>(is);
     }
 
@@ -533,25 +608,26 @@ struct CallParamCallbackData : public CallParam {
         out << "Callback data (TODO)" << std::endl;
     }
 
-    void serialize(std::ostream &os) const {
+    void serialize(std::ostream& os) const {
         ::serialize(os, CALL_PARAM_CALLBACK_DATA);
         ::serialize(os, CALL_PARAM_TEMPLATE_TYPE_NONE);
         ::serialize(os, m_present);
     }
 
 private:
-    CallParamCallbackData() : CallParam(CALL_PARAM_CALLBACK_DATA, CALL_PARAM_TEMPLATE_TYPE_NONE) {}
+    CallParamCallbackData()
+        : CallParam(CALL_PARAM_CALLBACK_DATA, CALL_PARAM_TEMPLATE_TYPE_NONE) {}
     bool m_present;
 };
 
-template<typename T>
-struct CallParamArray : public CallParam {
+template <typename T> struct CallParamArray : public CallParam {
 
-    CallParamArray(std::istream &is) : CallParamArray() {
+    CallParamArray(std::istream& is) : CallParamArray() {
         m_null_pointer = ::deserialize<bool>(is);
         uint32_t size = ::deserialize<uint32_t>(is);
         for (uint32_t i = 0; i < size; i++) {
-            m_elements.push_back(::deserialize<T>(is)); // FIXME this will be terribly slow
+            m_elements.push_back(
+                ::deserialize<T>(is)); // FIXME this will be terribly slow
         }
     }
 
@@ -568,10 +644,11 @@ struct CallParamArray : public CallParam {
     const std::vector<T>& values() const { return m_elements; }
 
     void print(std::ostream& out) const override {
-        out << "Array param: null pointer = " << m_null_pointer << ", size = " << m_elements.size() << std::endl;
+        out << "Array param: null pointer = " << m_null_pointer
+            << ", size = " << m_elements.size() << std::endl;
     }
 
-    void serialize(std::ostream &os) const {
+    void serialize(std::ostream& os) const {
         ::serialize(os, CALL_PARAM_ARRAY);
         ::serialize(os, call_param_template_type<T>());
         ::serialize(os, m_null_pointer);
@@ -584,21 +661,24 @@ struct CallParamArray : public CallParam {
     }
 
 private:
-    CallParamArray() : CallParam(CALL_PARAM_ARRAY, call_param_template_type<T>()) {}
+    CallParamArray()
+        : CallParam(CALL_PARAM_ARRAY, call_param_template_type<T>()) {}
     bool m_null_pointer;
     std::vector<T> m_elements;
 };
 
 struct CallParamProgramSource : public CallParam {
 
-    CallParamProgramSource(std::istream &is) : CallParamProgramSource() {
+    CallParamProgramSource(std::istream& is) : CallParamProgramSource() {
         uint32_t num_sources = ::deserialize<uint32_t>(is);
         for (uint32_t i = 0; i < num_sources; i++) {
             m_sources.push_back(::deserialize<std::string>(is));
         }
     }
 
-    CallParamProgramSource(size_t count, const size_t* lengths, const char** strings) : CallParamProgramSource() {
+    CallParamProgramSource(size_t count, const size_t* lengths,
+                           const char** strings)
+        : CallParamProgramSource() {
         for (size_t i = 0; i < count; i++) {
             size_t len = (lengths != nullptr) ? lengths[i] : 0;
             std::string src;
@@ -614,10 +694,11 @@ struct CallParamProgramSource : public CallParam {
     const std::vector<std::string>& sources() const { return m_sources; }
 
     void print(std::ostream& out) const override {
-        out << "Program source paramam: num sources = " << m_sources.size() << std::endl;
+        out << "Program source paramam: num sources = " << m_sources.size()
+            << std::endl;
     }
 
-    void serialize(std::ostream &os) const {
+    void serialize(std::ostream& os) const {
         ::serialize(os, CALL_PARAM_PROGRAM_SOURCE);
         ::serialize(os, CALL_PARAM_TEMPLATE_TYPE_NONE);
 
@@ -629,13 +710,14 @@ struct CallParamProgramSource : public CallParam {
     }
 
 private:
-    CallParamProgramSource() : CallParam(CALL_PARAM_PROGRAM_SOURCE, CALL_PARAM_TEMPLATE_TYPE_NONE) {}
+    CallParamProgramSource()
+        : CallParam(CALL_PARAM_PROGRAM_SOURCE, CALL_PARAM_TEMPLATE_TYPE_NONE) {}
     std::vector<std::string> m_sources;
 };
 
 struct CallParamString : public CallParam {
 
-    CallParamString(std::istream &is) : CallParamString() {
+    CallParamString(std::istream& is) : CallParamString() {
         m_present = ::deserialize<bool>(is);
         m_str = ::deserialize<std::string>(is);
     }
@@ -656,7 +738,7 @@ struct CallParamString : public CallParam {
         out << "String param: " << m_str << std::endl;
     }
 
-    void serialize(std::ostream &os) const {
+    void serialize(std::ostream& os) const {
         ::serialize(os, CALL_PARAM_STRING);
         ::serialize(os, CALL_PARAM_TEMPLATE_TYPE_NONE);
         ::serialize(os, m_present);
@@ -664,19 +746,20 @@ struct CallParamString : public CallParam {
     }
 
 private:
-    CallParamString() : CallParam(CALL_PARAM_STRING, CALL_PARAM_TEMPLATE_TYPE_NONE) {}
+    CallParamString()
+        : CallParam(CALL_PARAM_STRING, CALL_PARAM_TEMPLATE_TYPE_NONE) {}
     bool m_present;
     std::string m_str;
 };
 
 struct CallParamMapPointerCreation : public CallParam {
 
-    CallParamMapPointerCreation(std::istream &is) : CallParamMapPointerCreation() {
+    CallParamMapPointerCreation(std::istream& is)
+        : CallParamMapPointerCreation() {
         m_id = ::deserialize<uint64_t>(is);
     }
 
-    CallParamMapPointerCreation(uint64_t id)
-    : CallParamMapPointerCreation() {
+    CallParamMapPointerCreation(uint64_t id) : CallParamMapPointerCreation() {
         m_id = id;
     }
 
@@ -686,25 +769,26 @@ struct CallParamMapPointerCreation : public CallParam {
         out << "Map creation param" << std::endl;
     }
 
-    void serialize(std::ostream &os) const {
+    void serialize(std::ostream& os) const {
         ::serialize(os, CALL_PARAM_MAP_POINTER_CREATION);
         ::serialize(os, CALL_PARAM_TEMPLATE_TYPE_NONE);
         ::serialize(os, m_id);
     }
 
 private:
-    CallParamMapPointerCreation() : CallParam(CALL_PARAM_MAP_POINTER_CREATION, CALL_PARAM_TEMPLATE_TYPE_NONE) {}
+    CallParamMapPointerCreation()
+        : CallParam(CALL_PARAM_MAP_POINTER_CREATION,
+                    CALL_PARAM_TEMPLATE_TYPE_NONE) {}
     uint64_t m_id;
 };
 
 struct CallParamMapPointerUse : public CallParam {
 
-    CallParamMapPointerUse(std::istream &is) : CallParamMapPointerUse() {
+    CallParamMapPointerUse(std::istream& is) : CallParamMapPointerUse() {
         m_id = ::deserialize<uint64_t>(is);
     }
 
-    CallParamMapPointerUse(uint64_t id)
-    : CallParamMapPointerUse() {
+    CallParamMapPointerUse(uint64_t id) : CallParamMapPointerUse() {
         m_id = id;
     }
 
@@ -714,22 +798,24 @@ struct CallParamMapPointerUse : public CallParam {
         out << "Map use param" << std::endl;
     }
 
-    void serialize(std::ostream &os) const {
+    void serialize(std::ostream& os) const {
         ::serialize(os, CALL_PARAM_MAP_POINTER_USE);
         ::serialize(os, CALL_PARAM_TEMPLATE_TYPE_NONE);
         ::serialize(os, m_id);
     }
 
 private:
-    CallParamMapPointerUse() : CallParam(CALL_PARAM_MAP_POINTER_USE, CALL_PARAM_TEMPLATE_TYPE_NONE) {}
+    CallParamMapPointerUse()
+        : CallParam(CALL_PARAM_MAP_POINTER_USE, CALL_PARAM_TEMPLATE_TYPE_NONE) {
+    }
     uint64_t m_id;
 };
 
-static CallParam* construct_call_param(std::istream &is) {
+static CallParam* construct_call_param(std::istream& is) {
     CallParamType ptype = ::deserialize<CallParamType>(is);
     CallParamTemplateType ttype = ::deserialize<CallParamTemplateType>(is);
 
-    switch(ptype) {
+    switch (ptype) {
     case CALL_PARAM_VALUE:
         switch (ttype) {
         case CALL_PARAM_TEMPLATE_TYPE_INTPTR_T:
@@ -838,15 +924,14 @@ static CallParam* construct_call_param(std::istream &is) {
         return new CallParamMapPointerUse(is);
     }
 
-    fatal("Missing type in call param factory: ptype = %d, ttype = %d\n", ptype, ttype);
+    fatal("Missing type in call param factory: ptype = %d, ttype = %d\n", ptype,
+          ttype);
     return nullptr;
 }
 
 struct Call {
 
-    Call(std::istream &is) {
-        deserialize(is);
-    }
+    Call(std::istream& is) { deserialize(is); }
 
     Call(oclapi::command command) : m_call_id(command) {}
 
@@ -854,28 +939,26 @@ struct Call {
 
     size_t output_memory_requirements() const {
         size_t size = 0;
-        for (auto &param : m_params) {
+        for (auto& param : m_params) {
             size += param->output_memory_requirements();
         }
         return size;
     }
 
-    template<typename T>
-    void record_value(T value) {
+    template <typename T> void record_value(T value) {
         m_params.push_back(std::make_unique<CallParamValue<T>>(value));
     }
 
-    template<typename T>
-    void record_object_use(T object) {
+    template <typename T> void record_object_use(T object) {
         m_params.push_back(std::make_unique<CallParamObjectUse<T>>(object));
     }
 
-    template<typename T>
-    void record_object_use(unsigned count, T* objects) {
-        m_params.push_back(std::make_unique<CallParamObjectUse<T>>(count, objects));
+    template <typename T> void record_object_use(unsigned count, T* objects) {
+        m_params.push_back(
+            std::make_unique<CallParamObjectUse<T>>(count, objects));
     }
 
-    template<typename T>
+    template <typename T>
     void record_optional_object_creation(unsigned count, T* objects) {
         std::vector<uint64_t> ids;
         bool create = (objects != nullptr);
@@ -883,31 +966,34 @@ struct Call {
             uint64_t id = object_capture_tracker<T>().add(objects[i]);
             ids.push_back(id);
         }
-        m_params.push_back(std::make_unique<CallParamOptionalObjectCreation<T>>(create, std::move(ids)));
+        m_params.push_back(std::make_unique<CallParamOptionalObjectCreation<T>>(
+            create, std::move(ids)));
     }
 
-    template<typename T>
+    template <typename T>
     void record_value_out_by_reference(T* pointer, size_t size = sizeof(T)) {
-        m_params.push_back(std::make_unique<CallParamValueOutByRef<T>>(pointer, size));
+        m_params.push_back(
+            std::make_unique<CallParamValueOutByRef<T>>(pointer, size));
     }
 
-    template<typename T>
+    template <typename T>
     void record_null_terminated_property_list(T* properties) {
         std::vector<intptr_t> props;
         if (properties != nullptr) {
             while (*properties != 0) {
                 props.push_back(*properties++);
             }
-            m_params.push_back(std::make_unique<CallParamProperties>(std::move(props)));
+            m_params.push_back(
+                std::make_unique<CallParamProperties>(std::move(props)));
         } else {
             m_params.push_back(std::make_unique<CallParamProperties>());
         }
     }
 
-    template<typename T>
-    void record_callback(ocl_callback cbtype, T* ptr) {
+    template <typename T> void record_callback(ocl_callback cbtype, T* ptr) {
         bool present = ptr != nullptr;
-        m_params.push_back(std::make_unique<CallParamCallback>(cbtype, present));
+        m_params.push_back(
+            std::make_unique<CallParamCallback>(cbtype, present));
     }
 
     void record_callback_user_data(void* ptr) {
@@ -915,13 +1001,14 @@ struct Call {
         m_params.push_back(std::make_unique<CallParamCallbackData>(present));
     }
 
-    template<typename T>
-    void record_array(size_t size, const T* pointer) {
+    template <typename T> void record_array(size_t size, const T* pointer) {
         m_params.push_back(std::make_unique<CallParamArray<T>>(pointer, size));
     }
 
-    void record_program_source(size_t count, const size_t* lengths, const char** strings) {
-        m_params.push_back(std::make_unique<CallParamProgramSource>(count, lengths, strings));
+    void record_program_source(size_t count, const size_t* lengths,
+                               const char** strings) {
+        m_params.push_back(
+            std::make_unique<CallParamProgramSource>(count, lengths, strings));
     }
 
     void record_string(const char* str) {
@@ -933,17 +1020,16 @@ struct Call {
         m_params.push_back(std::make_unique<CallParamMapPointerUse>(id));
     }
 
-    template<typename T>
-    void record_return_value(T value) {
+    template <typename T> void record_return_value(T value) {
         m_return = std::make_unique<CallParamValue<T>>(value);
     }
 
-    template<typename T>
-    void record_return_object_creation(T object) {
+    template <typename T> void record_return_object_creation(T object) {
         std::vector<uint64_t> ids;
         uint64_t id = object_capture_tracker<T>().add(object);
         ids.push_back(id);
-        m_return = std::make_unique<CallParamOptionalObjectCreation<T>>(true, std::move(ids));
+        m_return = std::make_unique<CallParamOptionalObjectCreation<T>>(
+            true, std::move(ids));
     }
 
     void record_return_map_pointer_creation(void* ptr) {
@@ -956,13 +1042,13 @@ struct Call {
     }
 
     void print(std::ostream& out) {
-        
+
         out << std::endl
-            << "Call: " << oclapi::command_name(m_call_id)
-            << "(" << static_cast<uint32_t>(m_call_id) << ")" << std::endl;
+            << "Call: " << oclapi::command_name(m_call_id) << "("
+            << static_cast<uint32_t>(m_call_id) << ")" << std::endl;
 
         unsigned pnum = 0;
-        for (auto &param : m_params) {
+        for (auto& param : m_params) {
             out << "  Param " << pnum++ << ": ";
             param->print(out);
         }
@@ -971,7 +1057,7 @@ struct Call {
         m_return->print(out);
     }
 
-    void serialize(std::ostream &os) {
+    void serialize(std::ostream& os) {
         // Call ID
         uint32_t call_id = static_cast<uint32_t>(m_call_id);
         ::serialize(os, call_id);
@@ -982,12 +1068,12 @@ struct Call {
         // Parameters
         uint32_t num_params = static_cast<uint32_t>(m_params.size());
         ::serialize(os, num_params);
-        for (auto &param : m_params) {
+        for (auto& param : m_params) {
             param->serialize(os);
         }
     }
 
-    void deserialize(std::istream &is) {
+    void deserialize(std::istream& is) {
         // Call ID
         m_call_id = static_cast<oclapi::command>(::deserialize<uint32_t>(is));
 
@@ -1006,13 +1092,10 @@ struct Call {
         return m_params;
     }
 
-    const std::unique_ptr<CallParam>& retval() const {
-        return m_return;
-    }
+    const std::unique_ptr<CallParam>& retval() const { return m_return; }
 
 private:
     oclapi::command m_call_id;
     std::vector<std::unique_ptr<CallParam>> m_params;
     std::unique_ptr<CallParam> m_return;
 };
-

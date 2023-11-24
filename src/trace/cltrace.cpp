@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #include <vector>
 
 #include "ocl-api.hpp"
 
-#include "trace.hpp"
 #include "log.hpp"
+#include "trace.hpp"
 
 #include <cstdio>
 #include <iostream>
@@ -27,8 +26,8 @@ Trace trace;
 
 #include "ocltools-loader-gen.hpp"
 
-cl_int clGetPlatformIDs(cl_uint num_entries, cl_platform_id* platforms, cl_uint* num_platforms)
-{
+cl_int clGetPlatformIDs(cl_uint num_entries, cl_platform_id* platforms,
+                        cl_uint* num_platforms) {
     auto ret = PFN_clGetPlatformIDs(num_entries, platforms, num_platforms);
 
     Call call(oclapi::command::GET_PLATFORM_IDS);
@@ -43,11 +42,11 @@ cl_int clGetPlatformIDs(cl_uint num_entries, cl_platform_id* platforms, cl_uint*
 }
 
 cl_int clGetPlatformInfo(cl_platform_id platform, cl_platform_info param_name,
-                         size_t param_value_size, void *param_value,
-                         size_t *param_value_size_ret){
+                         size_t param_value_size, void* param_value,
+                         size_t* param_value_size_ret) {
     auto ret = PFN_clGetPlatformInfo(platform, param_name, param_value_size,
                                      param_value, param_value_size_ret);
-    
+
     Call call(oclapi::command::GET_PLATFORM_INFO);
     call.record_object_use(platform);
     call.record_value(param_name);
@@ -62,8 +61,8 @@ cl_int clGetPlatformInfo(cl_platform_id platform, cl_platform_info param_name,
 }
 
 cl_int clGetDeviceIDs(cl_platform_id platform, cl_device_type device_type,
-                      cl_uint num_entries, cl_device_id *devices,
-                      cl_uint *num_devices){
+                      cl_uint num_entries, cl_device_id* devices,
+                      cl_uint* num_devices) {
     auto ret = PFN_clGetDeviceIDs(platform, device_type, num_entries, devices,
                                   num_devices);
 
@@ -82,7 +81,7 @@ cl_int clGetDeviceIDs(cl_platform_id platform, cl_device_type device_type,
 
 cl_int clGetDeviceInfo(cl_device_id device, cl_device_info param_name,
                        size_t param_value_size, void* param_value,
-                       size_t *param_value_size_ret) {
+                       size_t* param_value_size_ret) {
     auto ret = PFN_clGetDeviceInfo(device, param_name, param_value_size,
                                    param_value, param_value_size_ret);
 
@@ -159,7 +158,8 @@ cl_program clCreateProgramWithSource(cl_context context, cl_uint count,
                                      const char** strings,
                                      const size_t* lengths,
                                      cl_int* errcode_ret) {
-    auto ret = PFN_clCreateProgramWithSource(context, count, strings, lengths, errcode_ret);
+    auto ret = PFN_clCreateProgramWithSource(context, count, strings, lengths,
+                                             errcode_ret);
 
     Call call(oclapi::command::CREATE_PROGRAM_WITH_SOURCE);
 
@@ -189,7 +189,8 @@ cl_int clReleaseProgram(cl_program program) {
 cl_int clGetProgramInfo(cl_program program, cl_program_info param_name,
                         size_t param_value_size, void* param_value,
                         size_t* param_value_size_ret) {
-    auto ret = PFN_clGetProgramInfo(program, param_name, param_value_size, param_value, param_value_size_ret);
+    auto ret = PFN_clGetProgramInfo(program, param_name, param_value_size,
+                                    param_value, param_value_size_ret);
 
     Call call(oclapi::command::GET_PROGRAM_INFO);
 
@@ -209,7 +210,8 @@ cl_int clBuildProgram(cl_program program, cl_uint num_devices,
                       const cl_device_id* device_list, const char* options,
                       void(CL_CALLBACK* pfn_notify)(cl_program, void*),
                       void* user_data) {
-    auto ret = PFN_clBuildProgram(program, num_devices, device_list, options, pfn_notify, user_data);
+    auto ret = PFN_clBuildProgram(program, num_devices, device_list, options,
+                                  pfn_notify, user_data);
 
     Call call(oclapi::command::BUILD_PROGRAM);
 
@@ -253,18 +255,18 @@ cl_int clReleaseKernel(cl_kernel kernel) {
     return ret;
 }
 
-cl_int clSetKernelArg(cl_kernel kernel, cl_uint arg_index,
-                      size_t arg_size, const void* arg_value) {
+cl_int clSetKernelArg(cl_kernel kernel, cl_uint arg_index, size_t arg_size,
+                      const void* arg_value) {
     auto ret = PFN_clSetKernelArg(kernel, arg_index, arg_size, arg_value);
 
     Call call(oclapi::command::SET_KERNEL_ARG);
-    
+
     call.record_object_use(kernel);
     call.record_value(arg_index);
     call.record_value(arg_size);
     if (arg_size == sizeof(void*)) {
-        // FIXME broken for pointer-sized values that happen to match the pointer
-        // for a tracked object
+        // FIXME broken for pointer-sized values that happen to match the
+        // pointer for a tracked object
         // TODO support samplers
         void* value = const_cast<void*>(arg_value);
         void* obj = *reinterpret_cast<void**>(value);
@@ -295,7 +297,8 @@ cl_mem clCreateBuffer(cl_context context, cl_mem_flags flags, size_t size,
     call.record_object_use(context);
     call.record_value(flags);
     call.record_value(size);
-    call.record_array(size, static_cast<char*>(host_ptr)); // TODO dedicated param class?
+    call.record_array(
+        size, static_cast<char*>(host_ptr)); // TODO dedicated param class?
     call.record_value_out_by_reference(errcode_ret);
     call.record_return_object_creation(ret);
 
@@ -356,12 +359,15 @@ size_t element_size_per_channel(cl_channel_type channel_type) {
 }
 
 size_t element_size(const cl_image_format& format) {
-    return element_size_per_channel(format.image_channel_data_type) * num_channels(format.image_channel_order);
+    return element_size_per_channel(format.image_channel_data_type) *
+           num_channels(format.image_channel_order);
 }
 
-size_t calculate_image_region_size(const cl_image_format& format, size_t row_pitch, size_t slice_pitch, const size_t* region) {
+size_t calculate_image_region_size(const cl_image_format& format,
+                                   size_t row_pitch, size_t slice_pitch,
+                                   const size_t* region) {
     if (row_pitch == 0) {
-        row_pitch  = region[0] * element_size(format);
+        row_pitch = region[0] * element_size(format);
     }
 
     if (slice_pitch == 0) {
@@ -375,10 +381,10 @@ size_t calculate_image_region_size(const cl_image_format& format, size_t row_pit
 
 cl_mem clCreateImage(cl_context context, cl_mem_flags flags,
                      const cl_image_format* image_format,
-                     const cl_image_desc* image_desc,
-                     void* host_ptr,
+                     const cl_image_desc* image_desc, void* host_ptr,
                      cl_int* errcode_ret) {
-    auto ret = PFN_clCreateImage(context, flags, image_format, image_desc, host_ptr, errcode_ret);
+    auto ret = PFN_clCreateImage(context, flags, image_format, image_desc,
+                                 host_ptr, errcode_ret);
 
     if (image_desc->mem_object != nullptr) {
         fatal("Image created from a buffer unsupported\n");
@@ -388,7 +394,8 @@ cl_mem clCreateImage(cl_context context, cl_mem_flags flags,
         fatal("Image created with host ptr unsupported\n");
     }
 
-    size_t region[3] = {image_desc->image_width, image_desc->image_height, image_desc->image_depth};
+    size_t region[3] = {image_desc->image_width, image_desc->image_height,
+                        image_desc->image_depth};
     switch (image_desc->image_type) {
     case CL_MEM_OBJECT_IMAGE1D:
         region[1] = 1;
@@ -407,17 +414,16 @@ cl_mem clCreateImage(cl_context context, cl_mem_flags flags,
         region[2] = image_desc->image_array_size;
         break;
     }
-    size_t image_data_size = calculate_image_region_size(*image_format,
-                                                         image_desc->image_row_pitch,
-                                                         image_desc->image_slice_pitch,
-                                                         region);
+    size_t image_data_size =
+        calculate_image_region_size(*image_format, image_desc->image_row_pitch,
+                                    image_desc->image_slice_pitch, region);
 
     Call call(oclapi::command::CREATE_IMAGE);
 
     call.record_object_use(context);
     call.record_value(flags);
     call.record_array(1, image_format); // TODO dedicated param type?
-    call.record_array(1, image_desc); // FIXME capture memobject use
+    call.record_array(1, image_desc);   // FIXME capture memobject use
     call.record_array(image_data_size, static_cast<char*>(host_ptr));
     call.record_value_out_by_reference(errcode_ret);
     call.record_return_object_creation(ret);
@@ -441,7 +447,8 @@ cl_int clReleaseMemObject(cl_mem mem) {
 cl_command_queue clCreateCommandQueue(cl_context context, cl_device_id device,
                                       cl_command_queue_properties properties,
                                       cl_int* errcode_ret) {
-    auto ret = PFN_clCreateCommandQueue(context, device, properties, errcode_ret);
+    auto ret =
+        PFN_clCreateCommandQueue(context, device, properties, errcode_ret);
 
     Call call(oclapi::command::CREATE_COMMAND_QUEUE);
     call.record_object_use(context);
@@ -455,11 +462,12 @@ cl_command_queue clCreateCommandQueue(cl_context context, cl_device_id device,
     return ret;
 }
 
-cl_command_queue clCreateCommandQueueWithProperties(cl_context context,
-                                                    cl_device_id device,
-                                                    const cl_queue_properties* properties,
-                                                    cl_int* errcode_ret) {
-    auto ret = PFN_clCreateCommandQueueWithProperties(context, device, properties, errcode_ret);
+cl_command_queue
+clCreateCommandQueueWithProperties(cl_context context, cl_device_id device,
+                                   const cl_queue_properties* properties,
+                                   cl_int* errcode_ret) {
+    auto ret = PFN_clCreateCommandQueueWithProperties(context, device,
+                                                      properties, errcode_ret);
 
     Call call(oclapi::command::CREATE_COMMAND_QUEUE_WITH_PROPERTIES);
 
@@ -474,10 +482,13 @@ cl_command_queue clCreateCommandQueueWithProperties(cl_context context,
     return ret;
 }
 
-cl_int clGetCommandQueueInfo(cl_command_queue command_queue, cl_command_queue_info param_name,
-                             size_t param_value_size, void* param_value, size_t* param_value_size_ret) {
-    auto ret = PFN_clGetCommandQueueInfo(command_queue, param_name, param_value_size,
-                                         param_value, param_value_size_ret);
+cl_int clGetCommandQueueInfo(cl_command_queue command_queue,
+                             cl_command_queue_info param_name,
+                             size_t param_value_size, void* param_value,
+                             size_t* param_value_size_ret) {
+    auto ret =
+        PFN_clGetCommandQueueInfo(command_queue, param_name, param_value_size,
+                                  param_value, param_value_size_ret);
 
     Call call(oclapi::command::GET_COMMAND_QUEUE_INFO);
 
@@ -509,10 +520,9 @@ cl_int clEnqueueNDRangeKernel(
     const size_t* global_work_offset, const size_t* global_work_size,
     const size_t* local_work_size, cl_uint num_events_in_wait_list,
     const cl_event* event_wait_list, cl_event* event) {
-    auto ret = PFN_clEnqueueNDRangeKernel(command_queue, kernel, work_dim,
-                                          global_work_offset, global_work_size,
-                                          local_work_size, num_events_in_wait_list,
-                                          event_wait_list, event);
+    auto ret = PFN_clEnqueueNDRangeKernel(
+        command_queue, kernel, work_dim, global_work_offset, global_work_size,
+        local_work_size, num_events_in_wait_list, event_wait_list, event);
 
     Call call(oclapi::command::ENQUEUE_NDRANGE_KERNEL);
 
@@ -523,7 +533,8 @@ cl_int clEnqueueNDRangeKernel(
     call.record_array(work_dim, global_work_size);
     call.record_array(work_dim, local_work_size);
     call.record_value(num_events_in_wait_list);
-    call.record_object_use(num_events_in_wait_list, const_cast<cl_event*>(event_wait_list));
+    call.record_object_use(num_events_in_wait_list,
+                           const_cast<cl_event*>(event_wait_list));
     call.record_optional_object_creation(event != nullptr ? 1 : 0, event);
     call.record_return_value(ret);
 
@@ -532,9 +543,11 @@ cl_int clEnqueueNDRangeKernel(
     return ret;
 }
 
-cl_int clEnqueueWriteImage(cl_command_queue command_queue, cl_mem image, cl_bool blocking_write,
-                           const size_t* origin, const size_t* region, size_t input_row_pitch,
-                           size_t input_slice_pitch, const void* ptr, cl_uint num_events_in_wait_list,
+cl_int clEnqueueWriteImage(cl_command_queue command_queue, cl_mem image,
+                           cl_bool blocking_write, const size_t* origin,
+                           const size_t* region, size_t input_row_pitch,
+                           size_t input_slice_pitch, const void* ptr,
+                           cl_uint num_events_in_wait_list,
                            const cl_event* event_wait_list, cl_event* event) {
 
     if (!blocking_write) {
@@ -542,18 +555,21 @@ cl_int clEnqueueWriteImage(cl_command_queue command_queue, cl_mem image, cl_bool
         trace.set_flag(Trace::flags::kImperfect);
     }
     // FIXME don't force command to be blocking
-    auto ret = PFN_clEnqueueWriteImage(command_queue, image, CL_BLOCKING, origin, region,
-                                       input_row_pitch, input_slice_pitch, ptr,
-                                       num_events_in_wait_list, event_wait_list, event);
+    auto ret = PFN_clEnqueueWriteImage(
+        command_queue, image, CL_BLOCKING, origin, region, input_row_pitch,
+        input_slice_pitch, ptr, num_events_in_wait_list, event_wait_list,
+        event);
     cl_image_format format;
 
     // TODO record format at image creation time instead
-    auto err = PFN_clGetImageInfo(image, CL_IMAGE_FORMAT, sizeof(format), &format, nullptr);
+    auto err = PFN_clGetImageInfo(image, CL_IMAGE_FORMAT, sizeof(format),
+                                  &format, nullptr);
     if (err != CL_SUCCESS) {
         fatal("Error while getting image format\n");
     }
 
-    auto data_size = calculate_image_region_size(format, input_row_pitch, input_slice_pitch, region);
+    auto data_size = calculate_image_region_size(format, input_row_pitch,
+                                                 input_slice_pitch, region);
 
     Call call(oclapi::command::ENQUEUE_WRITE_IMAGE);
 
@@ -564,9 +580,11 @@ cl_int clEnqueueWriteImage(cl_command_queue command_queue, cl_mem image, cl_bool
     call.record_array(3, region);
     call.record_value(input_row_pitch);
     call.record_value(input_slice_pitch);
-    call.record_array(data_size, static_cast<const char*>(ptr)); // TODO introduce blob type?
+    call.record_array(
+        data_size, static_cast<const char*>(ptr)); // TODO introduce blob type?
     call.record_value(num_events_in_wait_list);
-    call.record_object_use(num_events_in_wait_list, const_cast<cl_event*>(event_wait_list));
+    call.record_object_use(num_events_in_wait_list,
+                           const_cast<cl_event*>(event_wait_list));
     call.record_optional_object_creation(event != nullptr ? 1 : 0, event);
     call.record_return_value(ret);
 
@@ -575,27 +593,31 @@ cl_int clEnqueueWriteImage(cl_command_queue command_queue, cl_mem image, cl_bool
     return ret;
 }
 
-cl_int clEnqueueReadImage(cl_command_queue command_queue, cl_mem image, cl_bool blocking_read,
-                          const size_t* origin, const size_t* region, size_t row_pitch,
-                          size_t slice_pitch, void* ptr, cl_uint num_events_in_wait_list,
+cl_int clEnqueueReadImage(cl_command_queue command_queue, cl_mem image,
+                          cl_bool blocking_read, const size_t* origin,
+                          const size_t* region, size_t row_pitch,
+                          size_t slice_pitch, void* ptr,
+                          cl_uint num_events_in_wait_list,
                           const cl_event* event_wait_list, cl_event* event) {
     if (!blocking_read) {
         warn("Non-blocking image read will be made blocking\n");
         trace.set_flag(Trace::flags::kImperfect);
     }
     // FIXME don't force command to be blocking
-    auto ret = PFN_clEnqueueReadImage(command_queue, image, CL_BLOCKING, origin, region,
-                                      row_pitch, slice_pitch, ptr, num_events_in_wait_list,
-                                      event_wait_list, event);
+    auto ret = PFN_clEnqueueReadImage(
+        command_queue, image, CL_BLOCKING, origin, region, row_pitch,
+        slice_pitch, ptr, num_events_in_wait_list, event_wait_list, event);
     cl_image_format format;
 
     // TODO record format at image creation time instead
-    auto err = PFN_clGetImageInfo(image, CL_IMAGE_FORMAT, sizeof(format), &format, nullptr);
+    auto err = PFN_clGetImageInfo(image, CL_IMAGE_FORMAT, sizeof(format),
+                                  &format, nullptr);
     if (err != CL_SUCCESS) {
         fatal("Error while getting image format\n");
     }
 
-    auto data_size = calculate_image_region_size(format, row_pitch, slice_pitch, region);
+    auto data_size =
+        calculate_image_region_size(format, row_pitch, slice_pitch, region);
 
     Call call(oclapi::command::ENQUEUE_READ_IMAGE);
 
@@ -608,7 +630,8 @@ cl_int clEnqueueReadImage(cl_command_queue command_queue, cl_mem image, cl_bool 
     call.record_value(slice_pitch);
     call.record_array(data_size, static_cast<char*>(ptr));
     call.record_value(num_events_in_wait_list);
-    call.record_object_use(num_events_in_wait_list, const_cast<cl_event*>(event_wait_list));
+    call.record_object_use(num_events_in_wait_list,
+                           const_cast<cl_event*>(event_wait_list));
     call.record_optional_object_creation(event != nullptr ? 1 : 0, event);
     call.record_return_value(ret);
 
@@ -620,17 +643,17 @@ cl_int clEnqueueReadImage(cl_command_queue command_queue, cl_mem image, cl_bool 
 void* clEnqueueMapBuffer(cl_command_queue command_queue, cl_mem buffer,
                          cl_bool blocking_map, cl_map_flags map_flags,
                          size_t offset, size_t size,
-                         cl_uint num_events_in_wait_list, const cl_event *event_wait_list,
-                         cl_event *event, cl_int *errcode_ret) {
+                         cl_uint num_events_in_wait_list,
+                         const cl_event* event_wait_list, cl_event* event,
+                         cl_int* errcode_ret) {
     if (!blocking_map) {
         warn("Non-blocking buffer map will be made blocking\n");
         trace.set_flag(Trace::flags::kImperfect);
     }
     // FIXME don't force command to be blocking
-    auto ret = PFN_clEnqueueMapBuffer(command_queue, buffer, CL_BLOCKING,
-                                      map_flags, offset, size,
-                                      num_events_in_wait_list, event_wait_list,
-                                      event, errcode_ret);
+    auto ret = PFN_clEnqueueMapBuffer(
+        command_queue, buffer, CL_BLOCKING, map_flags, offset, size,
+        num_events_in_wait_list, event_wait_list, event, errcode_ret);
 
     Call call(oclapi::command::ENQUEUE_MAP_BUFFER);
 
@@ -641,7 +664,8 @@ void* clEnqueueMapBuffer(cl_command_queue command_queue, cl_mem buffer,
     call.record_value(offset);
     call.record_value(size);
     call.record_value(num_events_in_wait_list);
-    call.record_object_use(num_events_in_wait_list, const_cast<cl_event*>(event_wait_list));
+    call.record_object_use(num_events_in_wait_list,
+                           const_cast<cl_event*>(event_wait_list));
     call.record_optional_object_creation(event != nullptr ? 1 : 0, event);
     call.record_value_out_by_reference(errcode_ret);
     call.record_return_map_pointer_creation(ret);
@@ -652,14 +676,16 @@ void* clEnqueueMapBuffer(cl_command_queue command_queue, cl_mem buffer,
 }
 
 cl_int clEnqueueUnmapMemObject(cl_command_queue command_queue, cl_mem memobj,
-                               void *mapped_ptr, cl_uint num_events_in_wait_list,
-                               const cl_event *event_wait_list, cl_event *event) {
+                               void* mapped_ptr,
+                               cl_uint num_events_in_wait_list,
+                               const cl_event* event_wait_list,
+                               cl_event* event) {
     trace.set_flag(Trace::flags::kImperfect);
     // TODO insert a barrier
     // TODO capture memory region
     auto ret = PFN_clEnqueueUnmapMemObject(command_queue, memobj, mapped_ptr,
-                                           num_events_in_wait_list, event_wait_list,
-                                           event);
+                                           num_events_in_wait_list,
+                                           event_wait_list, event);
     // TODO wait
     // TODO remove mapped pointer
 
@@ -669,7 +695,8 @@ cl_int clEnqueueUnmapMemObject(cl_command_queue command_queue, cl_mem memobj,
     call.record_object_use(memobj);
     call.record_map_pointer_use(mapped_ptr);
     call.record_value(num_events_in_wait_list);
-    call.record_object_use(num_events_in_wait_list, const_cast<cl_event*>(event_wait_list));
+    call.record_object_use(num_events_in_wait_list,
+                           const_cast<cl_event*>(event_wait_list));
     call.record_optional_object_creation(event != nullptr ? 1 : 0, event);
     call.record_return_value(ret);
 
@@ -678,8 +705,9 @@ cl_int clEnqueueUnmapMemObject(cl_command_queue command_queue, cl_mem memobj,
     return ret;
 }
 
-cl_int clGetEventProfilingInfo(cl_event event, cl_profiling_info param_name, size_t param_value_size,
-                               void* param_value, size_t* param_value_size_ret) {
+cl_int clGetEventProfilingInfo(cl_event event, cl_profiling_info param_name,
+                               size_t param_value_size, void* param_value,
+                               size_t* param_value_size_ret) {
     auto ret = PFN_clGetEventProfilingInfo(event, param_name, param_value_size,
                                            param_value, param_value_size_ret);
 
@@ -761,9 +789,9 @@ struct initialiser {
     ~initialiser() {
         int pid = getpid();
         info("[%d] ending\n", pid);
-        //trace.print(std::cout);
+        // trace.print(std::cout);
 
-        const char *fname = getenv("OCLTRACE_TRACEFILE");
+        const char* fname = getenv("OCLTRACE_TRACEFILE");
         if (fname == nullptr) {
             fname = "test.ocltrace";
         }

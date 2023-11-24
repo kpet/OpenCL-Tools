@@ -17,12 +17,11 @@
 void Trace::print_stats(std::ostream& os) const {
     info("Stats\n");
     std::unordered_map<oclapi::command, unsigned long long> command_counts;
-    for (auto &call : m_calls) {
+    for (auto& call : m_calls) {
         command_counts[call.id()] += 1;
     }
 
-    for (auto &cmd_num : command_counts) {
+    for (auto& cmd_num : command_counts) {
         info("%s: %llu\n", oclapi::command_name(cmd_num.first), cmd_num.second);
     }
 }
-

@@ -26,7 +26,9 @@ static int gLoggingLevel;
 static bool gLoggingColour;
 static FILE* gLoggingFile;
 
-bool ocltools_log_level_enabled(loglevel level) { return gLoggingLevel >= level; }
+bool ocltools_log_level_enabled(loglevel level) {
+    return gLoggingLevel >= level;
+}
 
 static const char colourRed[] = "\e[0;31m";
 static const char colourYellow[] = "\e[0;33m";
@@ -141,4 +143,3 @@ void ocltools_log(loglevel level, const char* fmt, ...) {
         abort();
     }
 }
-

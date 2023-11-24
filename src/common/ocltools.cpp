@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #include "ocltools.hpp"
 #include "log.hpp"
 
-#include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 #include <cerrno>
 #include <cstdio>
@@ -46,8 +45,10 @@ static bool wait_for_child() {
     return true;
 }
 
-bool run_binary_with_preload(const std::string &app, const std::vector<std::string> &args,
-                             const std::string& preload, const std::vector<std::string>& env,
+bool run_binary_with_preload(const std::string& app,
+                             const std::vector<std::string>& args,
+                             const std::string& preload,
+                             const std::vector<std::string>& env,
                              std::function<bool()> parent_fn) {
     int child_pid = fork();
     if (child_pid != 0) {
@@ -58,7 +59,7 @@ bool run_binary_with_preload(const std::string &app, const std::vector<std::stri
         }
     } else {
         std::vector<const char*> args_c{app.c_str()};
-        for (auto &arg : args) {
+        for (auto& arg : args) {
             args_c.push_back(arg.c_str());
         }
         args_c.push_back(nullptr);
@@ -77,12 +78,10 @@ bool run_binary_with_preload(const std::string &app, const std::vector<std::stri
             env_c.push_back(e.c_str());
         }
         env_c.push_back(nullptr);
-        int ret = execvpe(app.c_str(),
-                          const_cast<char * const*>(args_c.data()),
-                          const_cast<char*const*>(env_c.data()));
+        int ret = execvpe(app.c_str(), const_cast<char* const*>(args_c.data()),
+                          const_cast<char* const*>(env_c.data()));
         // TODO report whta's in errno
         return false;
     }
     return true;
 }
-
