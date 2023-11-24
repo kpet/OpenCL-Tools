@@ -93,9 +93,10 @@ class TestRoundTrip(unittest.TestCase):
 
         # Capture trace
         res = run_cltrace(['capture.trace', 'capture', CLTESTS], cwd=tmpdir)
+        print(res.stdout.decode('utf-8'))
+        print(res.stderr.decode('utf-8'))
         self.assertEqual(res.returncode, 0)
         self.assertEqual(len(res.stderr), 0)
-        print(res.stdout.decode('utf-8'))
 
         # Check a single trace file was created and get its name
         files = os.listdir(tmpdir)
