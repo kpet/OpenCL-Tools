@@ -36,7 +36,7 @@ jobs:
         run: sudo apt-get install libva-dev
       - name: Install test deps
         if: ${{ matrix.os == 'ubuntu-latest' }}
-        run: sudo apt-get install pocl-opencl-icd
+        run: sudo apt-get install pocl-opencl-icd gdb
       - uses: actions/checkout@v2
         with:
           repository: KhronosGroup/OpenCL-SDK.git
