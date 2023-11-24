@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #include "visitor.hpp"
 
 #include <cassert>
@@ -30,24 +29,24 @@ static void __attribute__((noreturn)) unimplemented(const char* fmt, ...) {
     exit(EXIT_FAILURE);
 }
 
-std::string call_param_value_print(CallParam *param) {
+std::string call_param_value_print(CallParam* param) {
     auto ptype = param->type();
     auto ttype = param->ttype();
 
     switch (ttype) {
-    case CALL_PARAM_TEMPLATE_TYPE_CL_INT:  {
+    case CALL_PARAM_TEMPLATE_TYPE_CL_INT: {
         auto p = static_cast<CallParamValue<cl_int>*>(param);
         return std::to_string(p->value());
     }
-    case CALL_PARAM_TEMPLATE_TYPE_CL_UINT:  {
+    case CALL_PARAM_TEMPLATE_TYPE_CL_UINT: {
         auto p = static_cast<CallParamValue<cl_uint>*>(param);
         return std::to_string(p->value());
     }
-    case CALL_PARAM_TEMPLATE_TYPE_CL_LONG:  {
+    case CALL_PARAM_TEMPLATE_TYPE_CL_LONG: {
         auto p = static_cast<CallParamValue<cl_long>*>(param);
         return std::to_string(p->value());
     }
-    case CALL_PARAM_TEMPLATE_TYPE_CL_ULONG:  {
+    case CALL_PARAM_TEMPLATE_TYPE_CL_ULONG: {
         auto p = static_cast<CallParamValue<cl_long>*>(param);
         return std::to_string(p->value());
     }
@@ -56,19 +55,23 @@ std::string call_param_value_print(CallParam *param) {
     unimplemented("call_param_value_print");
 }
 
-const std::vector<uint64_t>& call_param_object_use_ids(CallParam *param) {
+const std::vector<uint64_t>& call_param_object_use_ids(CallParam* param) {
     auto ptype = param->type();
     auto ttype = param->ttype();
     assert(ptype = CALL_PARAM_OBJECT_USE);
     switch (ttype) {
     case CALL_PARAM_TEMPLATE_TYPE_CL_PLATFORM_ID:
-        return static_cast<CallParamObjectUse<cl_platform_id>*>(param)->object_ids();
+        return static_cast<CallParamObjectUse<cl_platform_id>*>(param)
+            ->object_ids();
     case CALL_PARAM_TEMPLATE_TYPE_CL_DEVICE_ID:
-        return static_cast<CallParamObjectUse<cl_device_id>*>(param)->object_ids();
+        return static_cast<CallParamObjectUse<cl_device_id>*>(param)
+            ->object_ids();
     case CALL_PARAM_TEMPLATE_TYPE_CL_CONTEXT:
-        return static_cast<CallParamObjectUse<cl_context>*>(param)->object_ids();
+        return static_cast<CallParamObjectUse<cl_context>*>(param)
+            ->object_ids();
     case CALL_PARAM_TEMPLATE_TYPE_CL_PROGRAM:
-        return static_cast<CallParamObjectUse<cl_program>*>(param)->object_ids();
+        return static_cast<CallParamObjectUse<cl_program>*>(param)
+            ->object_ids();
     case CALL_PARAM_TEMPLATE_TYPE_CL_KERNEL:
         return static_cast<CallParamObjectUse<cl_kernel>*>(param)->object_ids();
     case CALL_PARAM_TEMPLATE_TYPE_CL_MEM:
@@ -76,21 +79,24 @@ const std::vector<uint64_t>& call_param_object_use_ids(CallParam *param) {
     case CALL_PARAM_TEMPLATE_TYPE_CL_EVENT:
         return static_cast<CallParamObjectUse<cl_event>*>(param)->object_ids();
     case CALL_PARAM_TEMPLATE_TYPE_CL_COMMANDQUEUE:
-        return static_cast<CallParamObjectUse<cl_command_queue>*>(param)->object_ids();
+        return static_cast<CallParamObjectUse<cl_command_queue>*>(param)
+            ->object_ids();
     }
 
     unimplemented("call_param_object_use_ids");
 }
 
-bool call_param_object_use_multiple(CallParam *param) {
+bool call_param_object_use_multiple(CallParam* param) {
     auto ptype = param->type();
     auto ttype = param->ttype();
     assert(ptype = CALL_PARAM_OBJECT_USE);
     switch (ttype) {
     case CALL_PARAM_TEMPLATE_TYPE_CL_PLATFORM_ID:
-        return static_cast<CallParamObjectUse<cl_platform_id>*>(param)->multiple();
+        return static_cast<CallParamObjectUse<cl_platform_id>*>(param)
+            ->multiple();
     case CALL_PARAM_TEMPLATE_TYPE_CL_DEVICE_ID:
-        return static_cast<CallParamObjectUse<cl_device_id>*>(param)->multiple();
+        return static_cast<CallParamObjectUse<cl_device_id>*>(param)
+            ->multiple();
     case CALL_PARAM_TEMPLATE_TYPE_CL_CONTEXT:
         return static_cast<CallParamObjectUse<cl_context>*>(param)->multiple();
     case CALL_PARAM_TEMPLATE_TYPE_CL_PROGRAM:
@@ -102,7 +108,8 @@ bool call_param_object_use_multiple(CallParam *param) {
     case CALL_PARAM_TEMPLATE_TYPE_CL_EVENT:
         return static_cast<CallParamObjectUse<cl_event>*>(param)->multiple();
     case CALL_PARAM_TEMPLATE_TYPE_CL_COMMANDQUEUE:
-        return static_cast<CallParamObjectUse<cl_command_queue>*>(param)->multiple();
+        return static_cast<CallParamObjectUse<cl_command_queue>*>(param)
+            ->multiple();
     }
 
     unimplemented("call_param_object_use_multiple");
@@ -114,21 +121,32 @@ const std::vector<uint64_t> call_param_object_creation_ids(CallParam* param) {
     assert(ptype = CALL_PARAM_OPTIONAL_OBJECT_CREATION);
     switch (ttype) {
     case CALL_PARAM_TEMPLATE_TYPE_CL_PLATFORM_ID:
-        return static_cast<CallParamOptionalObjectCreation<cl_platform_id>*>(param)->object_ids();
+        return static_cast<CallParamOptionalObjectCreation<cl_platform_id>*>(
+                   param)
+            ->object_ids();
     case CALL_PARAM_TEMPLATE_TYPE_CL_DEVICE_ID:
-        return static_cast<CallParamOptionalObjectCreation<cl_device_id>*>(param)->object_ids();
+        return static_cast<CallParamOptionalObjectCreation<cl_device_id>*>(
+                   param)
+            ->object_ids();
     case CALL_PARAM_TEMPLATE_TYPE_CL_CONTEXT:
-        return static_cast<CallParamOptionalObjectCreation<cl_context>*>(param)->object_ids();
+        return static_cast<CallParamOptionalObjectCreation<cl_context>*>(param)
+            ->object_ids();
     case CALL_PARAM_TEMPLATE_TYPE_CL_COMMANDQUEUE:
-        return static_cast<CallParamOptionalObjectCreation<cl_command_queue>*>(param)->object_ids();
+        return static_cast<CallParamOptionalObjectCreation<cl_command_queue>*>(
+                   param)
+            ->object_ids();
     case CALL_PARAM_TEMPLATE_TYPE_CL_PROGRAM:
-        return static_cast<CallParamOptionalObjectCreation<cl_program>*>(param)->object_ids();
+        return static_cast<CallParamOptionalObjectCreation<cl_program>*>(param)
+            ->object_ids();
     case CALL_PARAM_TEMPLATE_TYPE_CL_KERNEL:
-        return static_cast<CallParamOptionalObjectCreation<cl_kernel>*>(param)->object_ids();
+        return static_cast<CallParamOptionalObjectCreation<cl_kernel>*>(param)
+            ->object_ids();
     case CALL_PARAM_TEMPLATE_TYPE_CL_MEM:
-        return static_cast<CallParamOptionalObjectCreation<cl_mem>*>(param)->object_ids();
+        return static_cast<CallParamOptionalObjectCreation<cl_mem>*>(param)
+            ->object_ids();
     case CALL_PARAM_TEMPLATE_TYPE_CL_EVENT:
-        return static_cast<CallParamOptionalObjectCreation<cl_event>*>(param)->object_ids();
+        return static_cast<CallParamOptionalObjectCreation<cl_event>*>(param)
+            ->object_ids();
     }
 
     unimplemented("call_param_object_creation_ids");
@@ -144,9 +162,11 @@ bool call_param_array_null_pointer(CallParam* param) {
     case CALL_PARAM_TEMPLATE_TYPE_CHAR:
         return static_cast<CallParamArray<char>*>(param)->null_pointer();
     case CALL_PARAM_TEMPLATE_TYPE_CL_IMAGE_FORMAT:
-        return static_cast<CallParamArray<cl_image_format>*>(param)->null_pointer();
+        return static_cast<CallParamArray<cl_image_format>*>(param)
+            ->null_pointer();
     case CALL_PARAM_TEMPLATE_TYPE_CL_IMAGE_DESC:
-        return static_cast<CallParamArray<cl_image_desc>*>(param)->null_pointer();
+        return static_cast<CallParamArray<cl_image_desc>*>(param)
+            ->null_pointer();
     }
 
     unimplemented("call_param_array_null, ttype = %u", ttype);
@@ -161,7 +181,7 @@ std::string call_param_array_initialiser(CallParam* param) {
     case CALL_PARAM_TEMPLATE_TYPE_CL_ULONG: {
         auto p = static_cast<CallParamArray<cl_ulong>*>(param);
         auto& values = p->values();
-        const char * sep = "";
+        const char* sep = "";
         for (auto val : values) {
             ret += sep;
             ret += std::to_string(val);
@@ -172,7 +192,7 @@ std::string call_param_array_initialiser(CallParam* param) {
     case CALL_PARAM_TEMPLATE_TYPE_CHAR: {
         auto p = static_cast<CallParamArray<char>*>(param);
         auto& values = p->values();
-        const char * sep = "";
+        const char* sep = "";
         for (auto val : values) {
             ret += sep;
             ret += std::to_string(val);
@@ -183,10 +203,11 @@ std::string call_param_array_initialiser(CallParam* param) {
     case CALL_PARAM_TEMPLATE_TYPE_CL_IMAGE_FORMAT: {
         auto p = static_cast<CallParamArray<cl_image_format>*>(param);
         auto& values = p->values();
-        const char * sep = "";
+        const char* sep = "";
         for (auto val : values) {
             ret += sep;
-            ret += "{" + std::to_string(val.image_channel_order) + "," + std::to_string(val.image_channel_data_type) + "}";
+            ret += "{" + std::to_string(val.image_channel_order) + "," +
+                   std::to_string(val.image_channel_data_type) + "}";
             sep = ",";
         }
         break;
@@ -194,7 +215,7 @@ std::string call_param_array_initialiser(CallParam* param) {
     case CALL_PARAM_TEMPLATE_TYPE_CL_IMAGE_DESC: {
         auto p = static_cast<CallParamArray<cl_image_desc>*>(param);
         auto& values = p->values();
-        const char * sep = "";
+        const char* sep = "";
         for (auto val : values) {
             ret += sep;
             ret += "{";
@@ -231,7 +252,8 @@ private:
         return ret;
     }
 
-    std::string makeObjectCreationVarName(CallParamTemplateType ttype, uint32_t num) const {
+    std::string makeObjectCreationVarName(CallParamTemplateType ttype,
+                                          uint32_t num) const {
         std::string ret{"OBJECT_"};
         ret += call_param_template_type_name(ttype);
         ret += "_CREATION_" + std::to_string(num);
@@ -245,9 +267,11 @@ private:
         return ret;
     }
 
-    using object_variables_tracker = std::unordered_map<uint64_t, std::pair<uint32_t, uint32_t>>;
+    using object_variables_tracker =
+        std::unordered_map<uint64_t, std::pair<uint32_t, uint32_t>>;
 
-    object_variables_tracker& selectObjectVariableTracker(CallParamTemplateType ttype) {
+    object_variables_tracker&
+    selectObjectVariableTracker(CallParamTemplateType ttype) {
         switch (ttype) {
         case CALL_PARAM_TEMPLATE_TYPE_CL_PLATFORM_ID:
             return m_platform_object_variables;
@@ -284,11 +308,9 @@ private:
 public:
     TraceSourceGenerationVisitor() : m_call_num(0), m_object_creation_num(0) {}
 
-    const std::string source() const {
-        return m_src.str();
-    }
+    const std::string source() const { return m_src.str(); }
 
-    void preVisit(const Trace &trace) override {
+    void preVisit(const Trace& trace) override {
         m_src << R"(
 #include <vector>
 
@@ -298,12 +320,12 @@ int main(int argc, char* argv[]) {
 )";
     }
 
-    void visitCall(const Call &call) override {
-        m_src << std::endl << "// Call " << m_call_num  << std::endl;
+    void visitCall(const Call& call) override {
+        m_src << std::endl << "// Call " << m_call_num << std::endl;
         std::vector<std::string> call_var_values;
         // Declare variables for output parameters and object creation
         int param_num = 0;
-        for (auto &par : call.params()) {
+        for (auto& par : call.params()) {
             auto param = par.get();
             auto ptype = param->type();
             auto ttype = param->ttype();
@@ -312,8 +334,8 @@ int main(int argc, char* argv[]) {
                 auto object_ids = call_param_object_creation_ids(param);
                 auto varname = handleObjectCreation(ttype, object_ids);
                 if (object_ids.size() > 1) {
-                    m_src << makeVectorType(ttype) << " "
-                          << varname << "(" << object_ids.size() << ");" << std::endl;
+                    m_src << makeVectorType(ttype) << " " << varname << "("
+                          << object_ids.size() << ");" << std::endl;
                     pstr = varname + ".data()";
                 } else {
                     m_src << call_param_template_type_name(ttype) << " "
@@ -323,7 +345,8 @@ int main(int argc, char* argv[]) {
             } else if (ptype == CALL_PARAM_VALUE) {
                 pstr = makeCallParamVarName(param_num);
                 m_src << call_param_template_type_name(ttype) << " " << pstr
-                      << " = " << call_param_value_print(param) << ";" << std::endl;
+                      << " = " << call_param_value_print(param) << ";"
+                      << std::endl;
             } else if (ptype == CALL_PARAM_OBJECT_USE) {
 
                 auto obj_type_name = call_param_template_type_name(ttype);
@@ -334,24 +357,33 @@ int main(int argc, char* argv[]) {
 
                         // Declare vector to serve as input parameter
                         auto pvar = makeCallParamVarName(param_num);
-                        m_src << makeVectorType(ttype) << " " << pvar << ";" << std::endl;
+                        m_src << makeVectorType(ttype) << " " << pvar << ";"
+                              << std::endl;
 
                         // Assign objects to vector
                         uint32_t objcnt = 0;
                         for (auto id : ids) {
-                            auto creation_index = selectObjectVariableTracker(ttype).at(id);
-                            auto cvar = makeObjectCreationVarName(ttype, creation_index.first);
-                            auto cval = cvar + "[" + std::to_string(creation_index.second) + "]";
-                            m_src << pvar << "[" << objcnt << "] = " << cval << ";" << std::endl;
+                            auto creation_index =
+                                selectObjectVariableTracker(ttype).at(id);
+                            auto cvar = makeObjectCreationVarName(
+                                ttype, creation_index.first);
+                            auto cval = cvar + "[" +
+                                        std::to_string(creation_index.second) +
+                                        "]";
+                            m_src << pvar << "[" << objcnt << "] = " << cval
+                                  << ";" << std::endl;
                         }
                         // Prepare parameter
                         pstr = pvar + ".data()";
                     } else if (ids.size() == 1) {
                         // Declare var to serve as input parameter
                         auto pvar = makeCallParamVarName(param_num);
-                        auto creation_index = selectObjectVariableTracker(ttype).at(ids[0]);
-                        auto cvar = makeObjectCreationVarName(ttype, creation_index.first);
-                        m_src << obj_type_name << " " << pvar << " = " << cvar << ";" << std::endl;
+                        auto creation_index =
+                            selectObjectVariableTracker(ttype).at(ids[0]);
+                        auto cvar = makeObjectCreationVarName(
+                            ttype, creation_index.first);
+                        m_src << obj_type_name << " " << pvar << " = " << cvar
+                              << ";" << std::endl;
                         pstr = "&" + pvar;
                     } else {
                         pstr = "nullptr";
@@ -359,9 +391,12 @@ int main(int argc, char* argv[]) {
                 } else {
                     // Declare var to serve as input parameter
                     auto pvar = makeCallParamVarName(param_num);
-                    auto creation_index = selectObjectVariableTracker(ttype).at(ids[0]);
-                    auto cvar = makeObjectCreationVarName(ttype, creation_index.first);
-                    m_src << obj_type_name << " " << pvar << " = " << cvar << ";" << std::endl;
+                    auto creation_index =
+                        selectObjectVariableTracker(ttype).at(ids[0]);
+                    auto cvar =
+                        makeObjectCreationVarName(ttype, creation_index.first);
+                    m_src << obj_type_name << " " << pvar << " = " << cvar
+                          << ";" << std::endl;
                     pstr = pvar;
                 }
 
@@ -371,10 +406,12 @@ int main(int argc, char* argv[]) {
                 if (ttype == CALL_PARAM_TEMPLATE_TYPE_VOID) {
                     auto p = static_cast<CallParamValueOutByRef<void>*>(param);
                     m_src << "std::vector<char> " << varname << "("
-                          << p->output_memory_requirements() << ");" << std::endl;
+                          << p->output_memory_requirements() << ");"
+                          << std::endl;
                     pstr = varname + ".data()";
                 } else {
-                    m_src << call_param_template_type_name(ttype) << " " << varname  << ";" << std::endl;
+                    m_src << call_param_template_type_name(ttype) << " "
+                          << varname << ";" << std::endl;
                     pstr = "&" + varname;
                 }
             } else if (ptype == CALL_PARAM_PROPERTIES) {
@@ -382,7 +419,8 @@ int main(int argc, char* argv[]) {
                 auto pcasted = static_cast<CallParamProperties*>(param);
                 auto props = pcasted->properties();
                 if (pcasted->has_list()) {
-                    auto vectype = makeVectorType(CALL_PARAM_TEMPLATE_TYPE_INTPTR_T);
+                    auto vectype =
+                        makeVectorType(CALL_PARAM_TEMPLATE_TYPE_INTPTR_T);
                     m_src << vectype << " " << varname << " = {";
                     std::string sep;
                     for (auto prop : props) {
@@ -397,14 +435,16 @@ int main(int argc, char* argv[]) {
                     pstr = "nullptr";
                 }
             } else if (ptype == CALL_PARAM_CALLBACK) {
-                auto present = static_cast<CallParamCallback*>(param)->present();
+                auto present =
+                    static_cast<CallParamCallback*>(param)->present();
                 if (present) {
                     abort(); // TODO
                 } else {
                     pstr = "nullptr";
                 }
             } else if (ptype == CALL_PARAM_CALLBACK_DATA) {
-                auto present = static_cast<CallParamCallbackData*>(param)->present();
+                auto present =
+                    static_cast<CallParamCallbackData*>(param)->present();
                 if (present) {
                     abort(); // TODO
                 } else {
@@ -417,13 +457,15 @@ int main(int argc, char* argv[]) {
                 } else {
                     auto init = call_param_array_initialiser(param);
                     auto varname = makeCallParamVarName(param_num);
-                    m_src << makeVectorType(ttype) << " " << varname << " = {" << init << "};" << std::endl;
+                    m_src << makeVectorType(ttype) << " " << varname << " = {"
+                          << init << "};" << std::endl;
                     pstr = varname + ".data()";
                 }
             } else if (ptype == CALL_PARAM_PROGRAM_SOURCE) {
                 auto varname = makeCallParamVarName(param_num);
                 m_src << "std::vector<const char*> " << varname << " = {";
-                for (auto& src : static_cast<CallParamProgramSource*>(param)->sources()) {
+                for (auto& src :
+                     static_cast<CallParamProgramSource*>(param)->sources()) {
                     m_src << "R\"(" << src << ")\",";
                 }
                 m_src << "};" << std::endl;
@@ -450,14 +492,17 @@ int main(int argc, char* argv[]) {
         // Return value
         auto& retval = call.retval();
         auto ttype = retval->ttype();
-        switch(retval->type()) {
+        switch (retval->type()) {
         case CALL_PARAM_VALUE:
-            m_src << call_param_template_type_name(ttype) << " " << "call_" << m_call_num << "_ret" << " = ";
+            m_src << call_param_template_type_name(ttype) << " "
+                  << "call_" << m_call_num << "_ret"
+                  << " = ";
             break;
         case CALL_PARAM_OPTIONAL_OBJECT_CREATION: {
             auto& object_ids = call_param_object_creation_ids(retval.get());
             auto varname = handleObjectCreation(ttype, object_ids);
-            m_src << call_param_template_type_name(ttype) << " " << varname << " = ";
+            m_src << call_param_template_type_name(ttype) << " " << varname
+                  << " = ";
             break;
         }
         case CALL_PARAM_MAP_POINTER_CREATION: {
@@ -469,13 +514,14 @@ int main(int argc, char* argv[]) {
         default:
             unimplemented("call param type in return");
         }
-        // TODO (optionally) check the return value is the same as at trace capture time
+        // TODO (optionally) check the return value is the same as at trace
+        // capture time
 
         // Call
         std::string callfn{oclapi::command_name(call.id())};
         m_src << callfn << "(";
         std::string sep = "";
-        for (auto &v : call_var_values) {
+        for (auto& v : call_var_values) {
             m_src << sep << v;
             sep = ", ";
         }
@@ -487,6 +533,7 @@ int main(int argc, char* argv[]) {
         m_src << std::endl << "}" << std::endl;
         m_src.flush();
     }
+
 private:
     object_variables_tracker m_platform_object_variables;
     object_variables_tracker m_device_object_variables;

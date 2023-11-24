@@ -34,7 +34,8 @@ static command command_enum(const char* name) {
     return command::MAX_COMMAND;
 }
 
-enum ocl_callback : uint32_t {
+enum ocl_callback : uint32_t
+{
     OCL_CALLBACK_CONTEXT_NOTIFICATION,
     OCL_CALLBACK_PROGRAM_BUILD,
 };

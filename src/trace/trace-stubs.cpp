@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #define CL_API_SUFFIX_USER __attribute__((weak))
 
 #include "cl_headers.hpp"
@@ -25,5 +24,4 @@ void __attribute__((noreturn)) unimplemented(const char* name) {
 }
 
 #include "ocltools-trace-stubs-gen.hpp"
-
 }

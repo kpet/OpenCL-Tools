@@ -12,18 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #pragma once
 
 #include <ostream>
 
-template<typename T>
-void serialize(std::ostream &os, const T& val) {
+template <typename T> void serialize(std::ostream& os, const T& val) {
     os.write(reinterpret_cast<char*>(const_cast<T*>(&val)), sizeof(val));
 }
 
-template<>
-inline void serialize(std::ostream &os, const std::string& str) {
+template <> inline void serialize(std::ostream& os, const std::string& str) {
     uint32_t len = static_cast<uint32_t>(str.length());
     serialize(os, len);
     for (auto c : str) {
@@ -31,15 +28,13 @@ inline void serialize(std::ostream &os, const std::string& str) {
     }
 }
 
-template<typename T>
-T deserialize(std::istream &is) {
+template <typename T> T deserialize(std::istream& is) {
     T val;
     is.read(reinterpret_cast<char*>(&val), sizeof(val));
     return val;
 }
 
-template<>
-inline std::string deserialize(std::istream &is) {
+template <> inline std::string deserialize(std::istream& is) {
     uint32_t len = deserialize<uint32_t>(is);
     std::string ret;
     for (uint32_t i = 0; i < len; i++) {

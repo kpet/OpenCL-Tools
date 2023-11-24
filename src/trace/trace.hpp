@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #pragma once
 
 #include "call.hpp"
@@ -31,45 +30,40 @@
 //    capture OS?
 
 struct Trace {
-    enum flags : uint32_t {
+    enum flags : uint32_t
+    {
         kImperfect = (1 << 0),
     };
 
-    void set_flag(flags f) {
-        m_flags |= f;
-    }
+    void set_flag(flags f) { m_flags |= f; }
 
-    bool has_calls() const {
-        return m_calls.size() > 0;
-    }
+    bool has_calls() const { return m_calls.size() > 0; }
 
-    void record(Call& call) {
-        m_calls.push_back(std::move(call));
-    }
+    void record(Call& call) { m_calls.push_back(std::move(call)); }
 
-    void print(std::ostream &out) {
-        for (auto &call : m_calls) {
+    void print(std::ostream& out) {
+        for (auto& call : m_calls) {
             call.print(out);
         };
     }
 
     size_t output_memory_requirements() const {
         size_t size = 0;
-        for (auto &call : m_calls) {
+        for (auto& call : m_calls) {
             size += call.output_memory_requirements();
         }
         return size;
     }
 
-    void serialize(std::ostream &os) {
+    void serialize(std::ostream& os) {
         ::serialize(os, m_flags);
         ::serialize(os, static_cast<uint32_t>(m_calls.size()));
-        for (auto &call : m_calls) {
+        for (auto& call : m_calls) {
             call.serialize(os);
         }
     }
 
-    void deserialize(std::istream &is) {
+    void deserialize(std::istream& is) {
         m_flags = ::deserialize<uint32_t>(is);
         uint32_t num_calls = ::deserialize<uint32_t>(is);
         for (unsigned i = 0; i < num_calls; i++) {
@@ -78,7 +72,7 @@ struct Trace {
         }
     }
 
-    void save(const std::string &filename) {
+    void save(const std::string& filename) {
         std::ofstream os(filename, std::ios::binary);
         info("Serialising trace to %s ... ", filename.c_str());
         serialize(os);
@@ -86,7 +80,7 @@ struct Trace {
         info("done.");
     }
 
-    bool load(const std::string &filename) {
+    bool load(const std::string& filename) {
         std::ifstream is(filename, std::ios::binary);
         if (!is.good()) {
             error("Can't open '%s'\n", filename.c_str());
@@ -97,7 +91,7 @@ struct Trace {
         return true;
     }
 
-    void print_info(std::ostream &os) {
+    void print_info(std::ostream& os) {
         os << "Trace info" << std::endl;
         os << "Flags:";
         if (m_flags & flags::kImperfect) {
@@ -109,11 +103,9 @@ struct Trace {
            << " bytes" << std::endl;
     }
 
-    void print_stats(std::ostream &os) const;
+    void print_stats(std::ostream& os) const;
 
-    const std::vector<Call>& calls() const {
-        return m_calls;
-    }
+    const std::vector<Call>& calls() const { return m_calls; }
 
 private:
     uint32_t m_flags;

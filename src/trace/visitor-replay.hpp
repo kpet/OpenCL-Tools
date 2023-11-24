@@ -12,29 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
-#include "visitor.hpp"
 #include "ocltools-loader-gen.hpp"
+#include "visitor.hpp"
 
 struct TraceReplayVisitor : TraceVisitor {
-    
-    template<typename T>
-    struct ValueReplayHandler {
-        ValueReplayHandler(const std::unique_ptr<CallParam> &param, char *&memory) {
+
+    template <typename T> struct ValueReplayHandler {
+        ValueReplayHandler(const std::unique_ptr<CallParam>& param,
+                           char*& memory) {
             m_param = static_cast<CallParamValue<T>*>(param.get());
             memory += m_param->output_memory_requirements();
         }
-        T value() const {
-            return m_param->value();
-        }
+        T value() const { return m_param->value(); }
+
     private:
-        CallParamValue<T> *m_param;
+        CallParamValue<T>* m_param;
     };
 
-    template<typename T>
-    struct OptionalObjectCreationReplayHandler {
-        OptionalObjectCreationReplayHandler(const std::unique_ptr<CallParam> &param, char *&memory) {
-            m_param = static_cast<CallParamOptionalObjectCreation<T>*>(param.get());
+    template <typename T> struct OptionalObjectCreationReplayHandler {
+        OptionalObjectCreationReplayHandler(
+            const std::unique_ptr<CallParam>& param, char*& memory) {
+            m_param =
+                static_cast<CallParamOptionalObjectCreation<T>*>(param.get());
             m_object_pointer = reinterpret_cast<T*>(memory);
             if (!m_param->create()) {
                 m_object_pointer = nullptr;
@@ -45,21 +44,21 @@ struct TraceReplayVisitor : TraceVisitor {
         ~OptionalObjectCreationReplayHandler() {
             auto objects_ids = m_param->object_ids();
             for (auto i = 0u; i < objects_ids.size(); i++) {
-                object_replay_tracker<T>().add(objects_ids[i], m_object_pointer[i]);
+                object_replay_tracker<T>().add(objects_ids[i],
+                                               m_object_pointer[i]);
             }
         }
 
-        T* object_pointer() const {
-            return m_object_pointer;
-        }
+        T* object_pointer() const { return m_object_pointer; }
+
     private:
-        T *m_object_pointer;
-        CallParamOptionalObjectCreation<T> *m_param;
+        T* m_object_pointer;
+        CallParamOptionalObjectCreation<T>* m_param;
     };
 
-    template<typename T>
-    struct ValueOutByRefReplayHandler {
-        ValueOutByRefReplayHandler(const std::unique_ptr<CallParam> &param, char *&memory) {
+    template <typename T> struct ValueOutByRefReplayHandler {
+        ValueOutByRefReplayHandler(const std::unique_ptr<CallParam>& param,
+                                   char*& memory) {
             m_param = static_cast<CallParamValueOutByRef<T>*>(param.get());
             m_pointer = reinterpret_cast<T*>(memory);
             if (m_param->null_pointer()) {
@@ -68,62 +67,60 @@ struct TraceReplayVisitor : TraceVisitor {
             memory += m_param->output_memory_requirements();
         }
 
-        T* pointer() const {
-            return m_pointer;
-        }
+        T* pointer() const { return m_pointer; }
+
     private:
         T* m_pointer;
-        CallParamValueOutByRef<T> *m_param;
+        CallParamValueOutByRef<T>* m_param;
     };
 
-    template<typename T>
-    struct ObjectUseReplayHandler {
-        ObjectUseReplayHandler(const std::unique_ptr<CallParam> &param, char *&memory) {
+    template <typename T> struct ObjectUseReplayHandler {
+        ObjectUseReplayHandler(const std::unique_ptr<CallParam>& param,
+                               char*& memory) {
             m_param = static_cast<CallParamObjectUse<T>*>(param.get());
             for (auto id : m_param->object_ids()) {
                 m_objects.push_back(object_replay_tracker<T>().get(id));
             }
         }
 
-        T const * objects() const {
-            return m_objects.data();
-        }
+        T const* objects() const { return m_objects.data(); }
 
     private:
-        CallParamObjectUse<T> *m_param;
+        CallParamObjectUse<T>* m_param;
         std::vector<T> m_objects;
     };
 
-
-    void preVisit(const Trace &trace) override {
+    void preVisit(const Trace& trace) override {
         // Get memory requirements
         auto size = trace.output_memory_requirements();
 
         // Allocate memory
         m_memory = static_cast<char*>(malloc(size));
-
     }
 
-    void visitCall(const Call &call) override {
-       
+    void visitCall(const Call& call) override {
+
         auto id = call.id();
-        auto &params = call.params();
-        auto &retval = call.retval();
+        auto& params = call.params();
+        auto& retval = call.retval();
 
         info("Replaying %s...", oclapi::command_name(id));
 
-        switch(call.id()) {
+        switch (call.id()) {
         case oclapi::command::GET_PLATFORM_IDS: {
 
             ValueReplayHandler<cl_uint> p0(params[0], m_memory);
-            OptionalObjectCreationReplayHandler<cl_platform_id> p1(params[1], m_memory);
+            OptionalObjectCreationReplayHandler<cl_platform_id> p1(params[1],
+                                                                   m_memory);
             ValueOutByRefReplayHandler<cl_uint> p2(params[2], m_memory);
 
-            auto ret = PFN_clGetPlatformIDs(p0.value(), p1.object_pointer(), p2.pointer());
+            auto ret = PFN_clGetPlatformIDs(p0.value(), p1.object_pointer(),
+                                            p2.pointer());
 
             ValueReplayHandler<decltype(ret)> retp(retval, m_memory);
             if (retp.value() != ret) {
-                warn("Returned value (%d) different from captured value (%d)\n", retp.value(), ret);
+                warn("Returned value (%d) different from captured value (%d)\n",
+                     retp.value(), ret);
             }
 
             info("returned %d", ret);
@@ -138,8 +135,9 @@ struct TraceReplayVisitor : TraceVisitor {
             ValueOutByRefReplayHandler<void> p3(params[3], m_memory);
             ValueOutByRefReplayHandler<size_t> p4(params[4], m_memory);
 
-            auto ret = PFN_clGetPlatformInfo(p0.objects()[0], p1.value(), p2.value(),
-                                             p3.pointer(), p4.pointer());
+            auto ret =
+                PFN_clGetPlatformInfo(p0.objects()[0], p1.value(), p2.value(),
+                                      p3.pointer(), p4.pointer());
             break;
         }
         default:
@@ -149,5 +147,5 @@ struct TraceReplayVisitor : TraceVisitor {
     }
 
 private:
-    char *m_memory;
+    char* m_memory;
 };

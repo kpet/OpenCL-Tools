@@ -12,24 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #include "ocltools.hpp"
 
+#include "CLI/CLI.hpp"
 #include <iostream>
 #include <string>
-#include "CLI/CLI.hpp"
 
-#include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 #include "trace.hpp"
 
 #include "visitor-replay.hpp"
 #include "visitor-srcgen.hpp"
 
-bool handle_capture(const std::string &tracefile, const std::string &app,
-                    const std::vector<std::string> &args) {
+bool handle_capture(const std::string& tracefile, const std::string& app,
+                    const std::vector<std::string>& args) {
 
     std::vector<std::string> env;
     std::string env_tracefile{"OCLTRACE_TRACEFILE="};
@@ -39,8 +38,8 @@ bool handle_capture(const std::string &tracefile, const std::string &app,
     return run_binary_with_preload(app, args, "libocltools-trace.so", env);
 }
 
-bool handle_replay(const std::string &tracefile) {
-    void *handle = dlopen("libOpenCL.so", RTLD_LAZY);
+bool handle_replay(const std::string& tracefile) {
+    void* handle = dlopen("libOpenCL.so", RTLD_LAZY);
     init_api(handle);
     Trace trace;
     trace.load(tracefile);
@@ -49,7 +48,7 @@ bool handle_replay(const std::string &tracefile) {
     return true;
 }
 
-bool handle_srcgen(const std::string &tracefile) {
+bool handle_srcgen(const std::string& tracefile) {
     TraceSourceGenerationVisitor srcgen;
     Trace trace;
     trace.load(tracefile);
@@ -58,21 +57,21 @@ bool handle_srcgen(const std::string &tracefile) {
     return true;
 }
 
-bool handle_info(const std::string &tracefile) {
+bool handle_info(const std::string& tracefile) {
     Trace trace;
     trace.load(tracefile);
     trace.print_info(std::cout);
     return true;
 }
 
-bool handle_print(const std::string &tracefile) {
+bool handle_print(const std::string& tracefile) {
     Trace trace;
     trace.load(tracefile);
     trace.print(std::cout);
     return true;
 }
 
-bool handle_stats(const std::string &tracefile) {
+bool handle_stats(const std::string& tracefile) {
     Trace trace;
     trace.load(tracefile);
     trace.print_stats(std::cout);
@@ -85,22 +84,24 @@ int main(int argc, char* argv[]) {
     app.require_subcommand();
 
     std::string tracefile;
-    app.add_option("tracefile", tracefile, "The trace file to operate on")->required();
+    app.add_option("tracefile", tracefile, "The trace file to operate on")
+        ->required();
 
     std::string application;
-    CLI::App *cmd_capture = app.add_subcommand("capture", "Capture a trace");
+    CLI::App* cmd_capture = app.add_subcommand("capture", "Capture a trace");
     cmd_capture->allow_extras();
     cmd_capture->add_option("application", application)->required();
-    
-    CLI::App *cmd_replay = app.add_subcommand("replay", "Replay a trace");
 
-    CLI::App *cmd_srcgen = app.add_subcommand("generate-source", "Generate a C++ source file");
+    CLI::App* cmd_replay = app.add_subcommand("replay", "Replay a trace");
 
-    CLI::App *cmd_info = app.add_subcommand("info", "Infos on a trace");
+    CLI::App* cmd_srcgen =
+        app.add_subcommand("generate-source", "Generate a C++ source file");
 
-    CLI::App *cmd_print = app.add_subcommand("print", "Print a trace");
+    CLI::App* cmd_info = app.add_subcommand("info", "Infos on a trace");
 
-    CLI::App *cmd_stats = app.add_subcommand("stats", "Stats on a trace");
+    CLI::App* cmd_print = app.add_subcommand("print", "Print a trace");
+
+    CLI::App* cmd_stats = app.add_subcommand("stats", "Stats on a trace");
 
     CLI11_PARSE(app, argc, argv);
 
