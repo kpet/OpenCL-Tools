@@ -746,7 +746,10 @@ cl_int clGetSupportedImageFormats(cl_context context, cl_mem_flags flags,
     call.record_value(flags);
     call.record_value(image_type);
     call.record_value(num_entries);
-    call.record_value_out_by_reference(image_formats, num_entries * sizeof(cl_image_format)); // FIXME introduce dedicated param type for output arrays?
+    call.record_value_out_by_reference(
+        image_formats,
+        num_entries * sizeof(cl_image_format)); // FIXME introduce dedicated
+                                                // param type for output arrays?
     call.record_value_out_by_reference(num_image_formats);
     call.record_return_value(ret);
 
@@ -804,7 +807,8 @@ cl_int clSetMemObjectDestructorCallback(cl_mem memobj,
     Call call(oclapi::command::SET_MEM_OBJECT_DESTRUCTOR_CALLBACK);
 
     call.record_object_use(memobj);
-    call.record_callback(OCL_CALLBACK_CONTEXT_NOTIFICATION, pfn_notify); // FIXME add new callback type
+    call.record_callback(OCL_CALLBACK_CONTEXT_NOTIFICATION,
+                         pfn_notify); // FIXME add new callback type
     call.record_callback_user_data(user_data);
     call.record_return_value(ret);
 
