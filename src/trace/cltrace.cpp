@@ -143,6 +143,57 @@ cl_context clCreateContext(const cl_context_properties* properties,
     return ret;
 }
 
+cl_context clCreateContextFromType(
+    const cl_context_properties* properties, cl_device_type device_type,
+    void(CL_CALLBACK* pfn_notify)(const char*, const void*, size_t, void*),
+    void* user_data, cl_int* errcode_ret) {
+    auto ret = PFN_clCreateContextFromType(properties, device_type, pfn_notify,
+                                           user_data, errcode_ret);
+
+    Call call(oclapi::command::CREATE_CONTEXT_FROM_TYPE);
+    call.record_null_terminated_property_list(properties);
+    call.record_value(device_type);
+    call.record_callback(OCL_CALLBACK_CONTEXT_NOTIFICATION, pfn_notify);
+    call.record_callback_user_data(user_data);
+    call.record_value_out_by_reference(errcode_ret);
+    call.record_return_object_creation(ret);
+
+    trace.record(call);
+
+    return ret;
+}
+
+cl_int clGetContextInfo(cl_context context, cl_context_info param_name,
+                        size_t param_value_size, void* param_value,
+                        size_t* param_value_size_ret) {
+    auto ret = PFN_clGetContextInfo(context, param_name, param_value_size,
+                                    param_value, param_value_size_ret);
+
+    Call call(oclapi::command::GET_CONTEXT_INFO);
+    call.record_object_use(context);
+    call.record_value(param_name);
+    call.record_value(param_value_size);
+    call.record_value_out_by_reference(param_value, param_value_size);
+    call.record_value_out_by_reference(param_value_size_ret);
+    call.record_return_value(ret);
+
+    trace.record(call);
+
+    return ret;
+}
+
+cl_int clRetainContext(cl_context context) {
+    auto ret = PFN_clRetainContext(context);
+
+    Call call(oclapi::command::RETAIN_CONTEXT);
+    call.record_object_use(context);
+    call.record_return_value(ret);
+
+    trace.record(call);
+
+    return ret;
+}
+
 cl_int clReleaseContext(cl_context context) {
     auto ret = PFN_clReleaseContext(context);
 
@@ -169,6 +220,58 @@ cl_program clCreateProgramWithSource(cl_context context, cl_uint count,
     call.record_array(count, lengths);
     call.record_value_out_by_reference(errcode_ret);
     call.record_return_object_creation(ret);
+
+    trace.record(call);
+
+    return ret;
+}
+
+cl_program clCreateProgramWithBuiltInKernels(cl_context context,
+                                             cl_uint num_devices,
+                                             const cl_device_id* device_list,
+                                             const char* kernel_names,
+                                             cl_int* errcode_ret) {
+    auto ret = PFN_clCreateProgramWithBuiltInKernels(
+        context, num_devices, device_list, kernel_names, errcode_ret);
+
+    Call call(oclapi::command::CREATE_PROGRAM_WITH_BUILT_IN_KERNELS);
+
+    call.record_object_use(context);
+    call.record_value(num_devices);
+    call.record_object_use(num_devices, device_list);
+    call.record_string(kernel_names);
+    call.record_value_out_by_reference(errcode_ret);
+    call.record_return_object_creation(ret);
+
+    trace.record(call);
+
+    return ret;
+}
+
+cl_program clCreateProgramWithIL(cl_context context, const void* il,
+                                 size_t length, cl_int* errcode_ret) {
+    auto ret = PFN_clCreateProgramWithIL(context, il, length, errcode_ret);
+
+    Call call(oclapi::command::CREATE_PROGRAM_WITH_IL);
+
+    call.record_object_use(context);
+    call.record_array(length, static_cast<const char*>(il));
+    call.record_value(length);
+    call.record_value_out_by_reference(errcode_ret);
+    call.record_return_object_creation(ret);
+
+    trace.record(call);
+
+    return ret;
+}
+
+cl_int clRetainProgram(cl_program program) {
+    auto ret = PFN_clRetainProgram(program);
+
+    Call call(oclapi::command::RETAIN_PROGRAM);
+
+    call.record_object_use(program);
+    call.record_return_value(ret);
 
     trace.record(call);
 
@@ -228,6 +331,57 @@ cl_int clBuildProgram(cl_program program, cl_uint num_devices,
     return ret;
 }
 
+cl_program clLinkProgram(cl_context context, cl_uint num_devices,
+                         const cl_device_id* device_list, const char* options,
+                         cl_uint num_input_programs,
+                         const cl_program* input_programs,
+                         void(CL_CALLBACK* pfn_notify)(cl_program, void*),
+                         void* user_data, cl_int* errcode_ret) {
+    auto ret = PFN_clLinkProgram(context, num_devices, device_list, options,
+                                 num_input_programs, input_programs, pfn_notify,
+                                 user_data, errcode_ret);
+
+    Call call(oclapi::command::LINK_PROGRAM);
+
+    call.record_object_use(context);
+    call.record_value(num_devices);
+    call.record_object_use(num_devices, device_list);
+    call.record_string(options);
+    call.record_value(num_input_programs);
+    call.record_object_use(num_input_programs,
+                           const_cast<cl_program*>(input_programs));
+    call.record_callback(OCL_CALLBACK_PROGRAM_BUILD, pfn_notify);
+    call.record_callback_user_data(user_data);
+    call.record_value_out_by_reference(errcode_ret);
+    call.record_return_object_creation(ret);
+
+    trace.record(call);
+
+    return ret;
+}
+
+cl_int clGetProgramBuildInfo(cl_program program, cl_device_id device,
+                             cl_program_build_info param_name,
+                             size_t param_value_size, void* param_value,
+                             size_t* param_value_size_ret) {
+    auto ret =
+        PFN_clGetProgramBuildInfo(program, device, param_name, param_value_size,
+                                  param_value, param_value_size_ret);
+
+    Call call(oclapi::command::GET_PROGRAM_BUILD_INFO);
+    call.record_object_use(program);
+    call.record_object_use(device);
+    call.record_value(param_name);
+    call.record_value(param_value_size);
+    call.record_value_out_by_reference(param_value, param_value_size);
+    call.record_value_out_by_reference(param_value_size_ret);
+    call.record_return_value(ret);
+
+    trace.record(call);
+
+    return ret;
+}
+
 cl_kernel clCreateKernel(cl_program program, const char* kernel_name,
                          cl_int* errcode_ret) {
     auto ret = PFN_clCreateKernel(program, kernel_name, errcode_ret);
@@ -238,6 +392,37 @@ cl_kernel clCreateKernel(cl_program program, const char* kernel_name,
     call.record_string(kernel_name);
     call.record_value_out_by_reference(errcode_ret);
     call.record_return_object_creation(ret);
+
+    trace.record(call);
+
+    return ret;
+}
+
+cl_int clCreateKernelsInProgram(cl_program program, cl_uint num_kernels,
+                                cl_kernel* kernels, cl_uint* num_kernels_ret) {
+    auto ret = PFN_clCreateKernelsInProgram(program, num_kernels, kernels,
+                                            num_kernels_ret);
+
+    Call call(oclapi::command::CREATE_KERNELS_IN_PROGRAM);
+
+    call.record_object_use(program);
+    call.record_value(num_kernels);
+    call.record_optional_object_creation(num_kernels, kernels);
+    call.record_value_out_by_reference(num_kernels_ret);
+    call.record_return_value(ret);
+
+    trace.record(call);
+
+    return ret;
+}
+
+cl_int clRetainKernel(cl_kernel kernel) {
+    auto ret = PFN_clRetainKernel(kernel);
+
+    Call call(oclapi::command::RETAIN_KERNEL);
+
+    call.record_object_use(kernel);
+    call.record_return_value(ret);
 
     trace.record(call);
 
@@ -288,6 +473,98 @@ cl_int clSetKernelArg(cl_kernel kernel, cl_uint arg_index, size_t arg_size,
     return ret;
 }
 
+cl_int clGetKernelArgInfo(cl_kernel kernel, cl_uint arg_index,
+                          cl_kernel_arg_info param_name,
+                          size_t param_value_size, void* param_value,
+                          size_t* param_value_size_ret) {
+    auto ret =
+        PFN_clGetKernelArgInfo(kernel, arg_index, param_name, param_value_size,
+                               param_value, param_value_size_ret);
+
+    Call call(oclapi::command::GET_KERNEL_ARG_INFO);
+
+    call.record_object_use(kernel);
+    call.record_value(arg_index);
+    call.record_value(param_name);
+    call.record_value(param_value_size);
+    call.record_value_out_by_reference(param_value, param_value_size);
+    call.record_value_out_by_reference(param_value_size_ret);
+    call.record_return_value(ret);
+
+    trace.record(call);
+
+    return ret;
+}
+
+cl_int clGetKernelInfo(cl_kernel kernel, cl_kernel_info param_name,
+                       size_t param_value_size, void* param_value,
+                       size_t* param_value_size_ret) {
+    auto ret = PFN_clGetKernelInfo(kernel, param_name, param_value_size,
+                                   param_value, param_value_size_ret);
+
+    Call call(oclapi::command::GET_KERNEL_INFO);
+
+    call.record_object_use(kernel);
+    call.record_value(param_name);
+    call.record_value(param_value_size);
+    call.record_value_out_by_reference(param_value, param_value_size);
+    call.record_value_out_by_reference(param_value_size_ret);
+    call.record_return_value(ret);
+
+    trace.record(call);
+
+    return ret;
+}
+
+cl_int clGetKernelWorkGroupInfo(cl_kernel kernel, cl_device_id device,
+                                cl_kernel_work_group_info param_name,
+                                size_t param_value_size, void* param_value,
+                                size_t* param_value_size_ret) {
+    auto ret = PFN_clGetKernelWorkGroupInfo(kernel, device, param_name,
+                                            param_value_size, param_value,
+                                            param_value_size_ret);
+
+    Call call(oclapi::command::GET_KERNEL_WORK_GROUP_INFO);
+
+    call.record_object_use(kernel);
+    call.record_object_use(device);
+    call.record_value(param_name);
+    call.record_value(param_value_size);
+    call.record_value_out_by_reference(param_value, param_value_size);
+    call.record_value_out_by_reference(param_value_size_ret);
+    call.record_return_value(ret);
+
+    trace.record(call);
+
+    return ret;
+}
+
+cl_int clGetKernelSubGroupInfo(cl_kernel kernel, cl_device_id device,
+                               cl_kernel_sub_group_info param_name,
+                               size_t input_value_size, const void* input_value,
+                               size_t param_value_size, void* param_value,
+                               size_t* param_value_size_ret) {
+    auto ret = PFN_clGetKernelSubGroupInfo(
+        kernel, device, param_name, input_value_size, input_value,
+        param_value_size, param_value, param_value_size_ret);
+
+    Call call(oclapi::command::GET_KERNEL_SUB_GROUP_INFO);
+
+    call.record_object_use(kernel);
+    call.record_object_use(device);
+    call.record_value(param_name);
+    call.record_value(input_value_size);
+    call.record_array(input_value_size, static_cast<const char*>(input_value));
+    call.record_value(param_value_size);
+    call.record_value_out_by_reference(param_value, param_value_size);
+    call.record_value_out_by_reference(param_value_size_ret);
+    call.record_return_value(ret);
+
+    trace.record(call);
+
+    return ret;
+}
+
 cl_mem clCreateBuffer(cl_context context, cl_mem_flags flags, size_t size,
                       void* host_ptr, cl_int* errcode_ret) {
     auto ret = PFN_clCreateBuffer(context, flags, size, host_ptr, errcode_ret);
@@ -306,6 +583,28 @@ cl_mem clCreateBuffer(cl_context context, cl_mem_flags flags, size_t size,
 
     return ret;
 }
+
+#if 0
+cl_mem clCreateSubBuffer(cl_mem buffer, cl_mem_flags flags,
+                         cl_buffer_create_type buffer_create_type,
+                         const void* buffer_create_info, cl_int* errcode_ret) {
+    auto ret = PFN_clCreateSubBuffer(buffer, flags, buffer_create_type,
+                                     buffer_create_info, errcode_ret);
+
+    Call call(oclapi::command::CREATE_SUB_BUFFER);
+    call.record_object_use(buffer);
+    call.record_value(flags);
+    call.record_value(buffer_create_type);
+    call.record_value_out_by_reference(const_cast<void*>(buffer_create_info),
+                                       sizeof(_cl_buffer_region)); // FIXME this is incorrect
+    call.record_value_out_by_reference(errcode_ret);
+    call.record_return_object_creation(ret);
+
+    trace.record(call);
+
+    return ret;
+}
+#endif
 
 namespace {
 
@@ -433,6 +732,105 @@ cl_mem clCreateImage(cl_context context, cl_mem_flags flags,
     return ret;
 }
 
+cl_int clGetSupportedImageFormats(cl_context context, cl_mem_flags flags,
+                                  cl_mem_object_type image_type,
+                                  cl_uint num_entries,
+                                  cl_image_format* image_formats,
+                                  cl_uint* num_image_formats) {
+    auto ret =
+        PFN_clGetSupportedImageFormats(context, flags, image_type, num_entries,
+                                       image_formats, num_image_formats);
+
+    Call call(oclapi::command::GET_SUPPORTED_IMAGE_FORMATS);
+
+    call.record_object_use(context);
+    call.record_value(flags);
+    call.record_value(image_type);
+    call.record_value(num_entries);
+    call.record_value_out_by_reference(
+        image_formats,
+        num_entries * sizeof(cl_image_format)); // FIXME introduce dedicated
+                                                // param type for output arrays?
+    call.record_value_out_by_reference(num_image_formats);
+    call.record_return_value(ret);
+
+    trace.record(call);
+
+    return ret;
+}
+
+cl_int clGetImageInfo(cl_mem image, cl_image_info param_name,
+                      size_t param_value_size, void* param_value,
+                      size_t* param_value_size_ret) {
+    auto ret = PFN_clGetImageInfo(image, param_name, param_value_size,
+                                  param_value, param_value_size_ret);
+
+    Call call(oclapi::command::GET_IMAGE_INFO);
+
+    call.record_object_use(image);
+    call.record_value(param_name);
+    call.record_value(param_value_size);
+    call.record_value_out_by_reference(param_value, param_value_size);
+    call.record_value_out_by_reference(param_value_size_ret);
+    call.record_return_value(ret);
+
+    trace.record(call);
+
+    return ret;
+}
+
+cl_int clGetMemObjectInfo(cl_mem memobj, cl_mem_info param_name,
+                          size_t param_value_size, void* param_value,
+                          size_t* param_value_size_ret) {
+    auto ret = PFN_clGetMemObjectInfo(memobj, param_name, param_value_size,
+                                      param_value, param_value_size_ret);
+
+    Call call(oclapi::command::GET_MEM_OBJECT_INFO);
+    call.record_object_use(memobj);
+    call.record_value(param_name);
+    call.record_value(param_value_size);
+    call.record_value_out_by_reference(param_value, param_value_size);
+    call.record_value_out_by_reference(param_value_size_ret);
+    call.record_return_value(ret);
+
+    trace.record(call);
+
+    return ret;
+}
+
+cl_int clSetMemObjectDestructorCallback(cl_mem memobj,
+                                        void(CL_CALLBACK* pfn_notify)(cl_mem,
+                                                                      void*),
+                                        void* user_data) {
+    auto ret =
+        PFN_clSetMemObjectDestructorCallback(memobj, pfn_notify, user_data);
+
+    Call call(oclapi::command::SET_MEM_OBJECT_DESTRUCTOR_CALLBACK);
+
+    call.record_object_use(memobj);
+    call.record_callback(OCL_CALLBACK_CONTEXT_NOTIFICATION,
+                         pfn_notify); // FIXME add new callback type
+    call.record_callback_user_data(user_data);
+    call.record_return_value(ret);
+
+    trace.record(call);
+
+    return ret;
+}
+
+cl_int clRetainMemObject(cl_mem memobj) {
+    auto ret = PFN_clRetainMemObject(memobj);
+
+    Call call(oclapi::command::RETAIN_MEM_OBJECT);
+
+    call.record_object_use(memobj);
+    call.record_return_value(ret);
+
+    trace.record(call);
+
+    return ret;
+}
+
 cl_int clReleaseMemObject(cl_mem mem) {
     auto ret = PFN_clReleaseMemObject(mem);
 
@@ -497,6 +895,19 @@ cl_int clGetCommandQueueInfo(cl_command_queue command_queue,
     call.record_value(param_value_size);
     call.record_value_out_by_reference(param_value, param_value_size);
     call.record_value_out_by_reference(param_value_size_ret);
+    call.record_return_value(ret);
+
+    trace.record(call);
+
+    return ret;
+}
+
+cl_int clRetainCommandQueue(cl_command_queue command_queue) {
+    auto ret = PFN_clRetainCommandQueue(command_queue);
+
+    Call call(oclapi::command::RETAIN_COMMAND_QUEUE);
+
+    call.record_object_use(command_queue);
     call.record_return_value(ret);
 
     trace.record(call);
@@ -705,6 +1116,39 @@ cl_int clEnqueueUnmapMemObject(cl_command_queue command_queue, cl_mem memobj,
     return ret;
 }
 
+cl_int clEnqueueWriteBuffer(cl_command_queue command_queue, cl_mem buffer,
+                            cl_bool blocking_write, size_t offset, size_t size,
+                            const void* ptr, cl_uint num_events_in_wait_list,
+                            const cl_event* event_wait_list, cl_event* event) {
+    if (!blocking_write) {
+        warn("Non-blocking image write will be made blocking\n");
+        trace.set_flag(Trace::flags::kImperfect);
+    }
+    // FIXME don't force command to be blocking
+
+    auto ret = PFN_clEnqueueWriteBuffer(
+        command_queue, buffer, CL_BLOCKING, offset, size, ptr,
+        num_events_in_wait_list, event_wait_list, event);
+
+    Call call(oclapi::command::ENQUEUE_WRITE_BUFFER);
+
+    call.record_object_use(command_queue);
+    call.record_object_use(buffer);
+    call.record_value(blocking_write);
+    call.record_value(offset);
+    call.record_value(size);
+    call.record_array(size, static_cast<const char*>(ptr));
+    call.record_value(num_events_in_wait_list);
+    call.record_object_use(num_events_in_wait_list,
+                           const_cast<cl_event*>(event_wait_list));
+    call.record_optional_object_creation(event != nullptr ? 1 : 0, event);
+    call.record_return_value(ret);
+
+    trace.record(call);
+
+    return ret;
+}
+
 cl_int clEnqueueReadBuffer(cl_command_queue command_queue, cl_mem buffer,
                            cl_bool blocking_read, size_t offset, size_t size,
                            void* ptr, cl_uint num_events_in_wait_list,
@@ -737,6 +1181,47 @@ cl_int clEnqueueReadBuffer(cl_command_queue command_queue, cl_mem buffer,
     return ret;
 }
 
+cl_int clEnqueueTask(cl_command_queue command_queue, cl_kernel kernel,
+                     cl_uint num_events_in_wait_list,
+                     const cl_event* event_wait_list, cl_event* event) {
+    auto ret = PFN_clEnqueueTask(command_queue, kernel, num_events_in_wait_list,
+                                 event_wait_list, event);
+
+    Call call(oclapi::command::ENQUEUE_TASK);
+
+    call.record_object_use(command_queue);
+    call.record_object_use(kernel);
+    call.record_value(num_events_in_wait_list);
+    call.record_object_use(num_events_in_wait_list,
+                           const_cast<cl_event*>(event_wait_list));
+    call.record_optional_object_creation(event != nullptr ? 1 : 0, event);
+    call.record_return_value(ret);
+
+    trace.record(call);
+
+    return ret;
+}
+
+cl_int clGetEventInfo(cl_event event, cl_event_info param_name,
+                      size_t param_value_size, void* param_value,
+                      size_t* param_value_size_ret) {
+    auto ret = PFN_clGetEventInfo(event, param_name, param_value_size,
+                                  param_value, param_value_size_ret);
+
+    Call call(oclapi::command::GET_EVENT_INFO);
+
+    call.record_object_use(event);
+    call.record_value(param_name);
+    call.record_value(param_value_size);
+    call.record_value_out_by_reference(param_value, param_value_size);
+    call.record_value_out_by_reference(param_value_size_ret);
+    call.record_return_value(ret);
+
+    trace.record(call);
+
+    return ret;
+}
+
 cl_int clGetEventProfilingInfo(cl_event event, cl_profiling_info param_name,
                                size_t param_value_size, void* param_value,
                                size_t* param_value_size_ret) {
@@ -750,6 +1235,34 @@ cl_int clGetEventProfilingInfo(cl_event event, cl_profiling_info param_name,
     call.record_value(param_value_size);
     call.record_value_out_by_reference(param_value, param_value_size);
     call.record_value_out_by_reference(param_value_size_ret);
+    call.record_return_value(ret);
+
+    trace.record(call);
+
+    return ret;
+}
+
+cl_event clCreateUserEvent(cl_context context, cl_int* errcode_ret) {
+    auto ret = PFN_clCreateUserEvent(context, errcode_ret);
+
+    Call call(oclapi::command::CREATE_USER_EVENT);
+
+    call.record_object_use(context);
+    call.record_value_out_by_reference(errcode_ret);
+    call.record_return_object_creation(ret);
+
+    trace.record(call);
+
+    return ret;
+}
+
+cl_int clSetUserEventStatus(cl_event event, cl_int execution_status) {
+    auto ret = PFN_clSetUserEventStatus(event, execution_status);
+
+    Call call(oclapi::command::SET_USER_EVENT_STATUS);
+
+    call.record_object_use(event);
+    call.record_value(execution_status);
     call.record_return_value(ret);
 
     trace.record(call);
@@ -794,12 +1307,78 @@ cl_int clReleaseEvent(cl_event event) {
     return ret;
 }
 
+cl_int clFlush(cl_command_queue command_queue) {
+    auto ret = PFN_clFlush(command_queue);
+
+    Call call(oclapi::command::FLUSH);
+
+    call.record_object_use(command_queue);
+    call.record_return_value(ret);
+
+    trace.record(call);
+
+    return ret;
+}
+
 cl_int clFinish(cl_command_queue queue) {
     auto ret = PFN_clFinish(queue);
 
     Call call(oclapi::command::FINISH);
 
     call.record_object_use(queue);
+    call.record_return_value(ret);
+
+    trace.record(call);
+
+    return ret;
+}
+
+#if 0
+void* clSVMAlloc(cl_context context, cl_svm_mem_flags flags, size_t size,
+                 unsigned int alignment) {
+    auto ret = PFN_clSVMAlloc(context, flags, size, alignment);
+
+    Call call(oclapi::command::SVMALLOC);
+    call.record_object_use(context);
+    call.record_value(flags);
+    call.record_value(size);
+    call.record_value(alignment);
+    call.record_return_map_pointer_creation(ret); // FIXME
+
+    trace.record(call);
+
+    return ret;
+}
+
+void clSVMFree(cl_context context, void* svm_pointer) {
+    PFN_clSVMFree(context, svm_pointer);
+
+    Call call(oclapi::command::SVMFREE);
+    call.record_object_use(context);
+    call.record_map_pointer_use(svm_pointer); // FIXME
+
+    trace.record(call);
+}
+#endif
+
+cl_int clUnloadCompiler(void) {
+    auto ret = PFN_clUnloadCompiler();
+
+    Call call(oclapi::command::UNLOAD_COMPILER);
+
+    call.record_return_value(ret);
+
+    trace.record(call);
+
+    return ret;
+}
+
+cl_int clUnloadPlatformCompiler(cl_platform_id platform) {
+    auto ret = PFN_clUnloadPlatformCompiler(platform);
+
+    Call call(oclapi::command::UNLOAD_PLATFORM_COMPILER);
+
+    call.record_object_use(platform);
     call.record_return_value(ret);
 
     trace.record(call);
