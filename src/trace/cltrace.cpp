@@ -238,7 +238,7 @@ cl_program clCreateProgramWithBuiltInKernels(cl_context context,
 
     call.record_object_use(context);
     call.record_value(num_devices);
-    call.record_optional_object_creation(num_devices, device_list);
+    call.record_object_use(num_devices, device_list);
     call.record_string(kernel_names);
     call.record_value_out_by_reference(errcode_ret);
     call.record_return_object_creation(ret);
@@ -348,7 +348,7 @@ cl_program clLinkProgram(cl_context context, cl_uint num_devices,
     call.record_object_use(num_devices, device_list);
     call.record_string(options);
     call.record_value(num_input_programs);
-    call.record_array(num_input_programs, input_programs);
+    call.record_object_use(num_input_programs, input_programs);
     call.record_callback(OCL_CALLBACK_PROGRAM_BUILD, pfn_notify);
     call.record_callback_user_data(user_data);
     call.record_value_out_by_reference(errcode_ret);
@@ -406,8 +406,7 @@ cl_int clCreateKernelsInProgram(cl_program program, cl_uint num_kernels,
 
     call.record_object_use(program);
     call.record_value(num_kernels);
-    call.record_value_out_by_reference(kernels,
-                                       num_kernels * sizeof(cl_kernel));
+    call.record_optional_object_creation(num_kernels, kernels);
     call.record_value_out_by_reference(num_kernels_ret);
     call.record_return_value(ret);
 
@@ -584,6 +583,7 @@ cl_mem clCreateBuffer(cl_context context, cl_mem_flags flags, size_t size,
     return ret;
 }
 
+#if 0
 cl_mem clCreateSubBuffer(cl_mem buffer, cl_mem_flags flags,
                          cl_buffer_create_type buffer_create_type,
                          const void* buffer_create_info, cl_int* errcode_ret) {
@@ -595,7 +595,7 @@ cl_mem clCreateSubBuffer(cl_mem buffer, cl_mem_flags flags,
     call.record_value(flags);
     call.record_value(buffer_create_type);
     call.record_value_out_by_reference(const_cast<void*>(buffer_create_info),
-                                       sizeof(_cl_buffer_region));
+                                       sizeof(_cl_buffer_region)); // FIXME this is incorrect
     call.record_value_out_by_reference(errcode_ret);
     call.record_return_object_creation(ret);
 
@@ -603,6 +603,7 @@ cl_mem clCreateSubBuffer(cl_mem buffer, cl_mem_flags flags,
 
     return ret;
 }
+#endif
 
 namespace {
 
@@ -730,45 +731,6 @@ cl_mem clCreateImage(cl_context context, cl_mem_flags flags,
     return ret;
 }
 
-cl_mem clCreateImage2D(cl_context context, cl_mem_flags flags,
-                       const cl_image_format* image_format, size_t image_width,
-                       size_t image_height, size_t image_row_pitch,
-                       void* host_ptr, cl_int* errcode_ret) {
-    PFN_clCreateImage2D(context, flags, image_format, image_width, image_height,
-                        image_row_pitch, host_ptr, errcode_ret);
-
-    cl_image_desc image_desc = {CL_MEM_OBJECT_IMAGE2D,
-                                image_width,
-                                image_height,
-                                1, // image_depth
-                                1, // image_array_size
-                                image_row_pitch};
-
-    return clCreateImage(context, flags, image_format, &image_desc, host_ptr,
-                         errcode_ret);
-}
-
-cl_mem clCreateImage3D(cl_context context, cl_mem_flags flags,
-                       const cl_image_format* image_format, size_t image_width,
-                       size_t image_height, size_t image_depth,
-                       size_t image_row_pitch, size_t image_slice_pitch,
-                       void* host_ptr, cl_int* errcode_ret) {
-    PFN_clCreateImage3D(context, flags, image_format, image_width, image_height,
-                        image_depth, image_row_pitch, image_slice_pitch,
-                        host_ptr, errcode_ret);
-
-    cl_image_desc image_desc = {CL_MEM_OBJECT_IMAGE3D,
-                                image_width,
-                                image_height,
-                                image_depth,
-                                1, // image_array_size
-                                image_row_pitch,
-                                image_slice_pitch};
-
-    return clCreateImage(context, flags, image_format, &image_desc, host_ptr,
-                         errcode_ret);
-}
-
 cl_int clGetSupportedImageFormats(cl_context context, cl_mem_flags flags,
                                   cl_mem_object_type image_type,
                                   cl_uint num_entries,
@@ -784,7 +746,7 @@ cl_int clGetSupportedImageFormats(cl_context context, cl_mem_flags flags,
     call.record_value(flags);
     call.record_value(image_type);
     call.record_value(num_entries);
-    call.record_array(num_entries, image_formats);
+    call.record_value_out_by_reference(image_formats, num_entries * sizeof(cl_image_format)); // FIXME introduce dedicated param type for output arrays?
     call.record_value_out_by_reference(num_image_formats);
     call.record_return_value(ret);
 
@@ -842,7 +804,7 @@ cl_int clSetMemObjectDestructorCallback(cl_mem memobj,
     Call call(oclapi::command::SET_MEM_OBJECT_DESTRUCTOR_CALLBACK);
 
     call.record_object_use(memobj);
-    call.record_callback(OCL_CALLBACK_CONTEXT_NOTIFICATION, pfn_notify);
+    call.record_callback(OCL_CALLBACK_CONTEXT_NOTIFICATION, pfn_notify); // FIXME add new callback type
     call.record_callback_user_data(user_data);
     call.record_return_value(ret);
 
@@ -1366,6 +1328,7 @@ cl_int clFinish(cl_command_queue queue) {
     return ret;
 }
 
+#if 0
 void* clSVMAlloc(cl_context context, cl_svm_mem_flags flags, size_t size,
                  unsigned int alignment) {
     auto ret = PFN_clSVMAlloc(context, flags, size, alignment);
@@ -1375,7 +1338,7 @@ void* clSVMAlloc(cl_context context, cl_svm_mem_flags flags, size_t size,
     call.record_value(flags);
     call.record_value(size);
     call.record_value(alignment);
-    call.record_return_map_pointer_creation(ret);
+    call.record_return_map_pointer_creation(ret); // FIXME
 
     trace.record(call);
 
@@ -1387,10 +1350,11 @@ void clSVMFree(cl_context context, void* svm_pointer) {
 
     Call call(oclapi::command::SVMFREE);
     call.record_object_use(context);
-    call.record_map_pointer_use(svm_pointer);
+    call.record_map_pointer_use(svm_pointer); // FIXME
 
     trace.record(call);
 }
+#endif
 
 cl_int clUnloadCompiler(void) {
     auto ret = PFN_clUnloadCompiler();
