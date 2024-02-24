@@ -390,8 +390,10 @@ int main(int argc, char* argv[]) {
                     }
                 } else {
                     // Declare var to serve as input parameter
-                    if (ttype == CALL_PARAM_TEMPLATE_TYPE_CL_PLATFORM_ID &&
-                        static_cast<int64_t>(ids[0]) != -1) {
+                    if (static_cast<int64_t>(ids[0]) == -1) {
+                        assert(ttype == CALL_PARAM_TEMPLATE_TYPE_CL_PLATFORM_ID);
+                        pstr = "nullptr";
+                    } else {
                         auto pvar = makeCallParamVarName(param_num);
                         auto creation_index =
                             selectObjectVariableTracker(ttype).at(ids[0]);
@@ -400,8 +402,6 @@ int main(int argc, char* argv[]) {
                         m_src << obj_type_name << " " << pvar << " = " << cvar
                               << ";" << std::endl;
                         pstr = pvar;
-                    } else {
-                        pstr = "nullptr";
                     }
                 }
 
