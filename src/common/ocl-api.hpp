@@ -38,6 +38,7 @@ enum ocl_callback : uint32_t
 {
     OCL_CALLBACK_CONTEXT_NOTIFICATION,
     OCL_CALLBACK_PROGRAM_BUILD,
+    OCL_CALLBACK_MEM_OBJECT_DESTRUCTOR,
 };
 
 } // namespace oclapi
