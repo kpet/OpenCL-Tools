@@ -391,7 +391,8 @@ int main(int argc, char* argv[]) {
                 } else {
                     // Declare var to serve as input parameter
                     if (static_cast<int64_t>(ids[0]) == -1) {
-                        assert(ttype == CALL_PARAM_TEMPLATE_TYPE_CL_PLATFORM_ID);
+                        assert(ttype ==
+                               CALL_PARAM_TEMPLATE_TYPE_CL_PLATFORM_ID);
                         pstr = "nullptr";
                     } else {
                         auto pvar = makeCallParamVarName(param_num);
