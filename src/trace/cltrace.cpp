@@ -808,8 +808,8 @@ cl_int clSetMemObjectDestructorCallback(cl_mem memobj,
     Call call(oclapi::command::SET_MEM_OBJECT_DESTRUCTOR_CALLBACK);
 
     call.record_object_use(memobj);
-    call.record_callback(OCL_CALLBACK_CONTEXT_NOTIFICATION,
-                         pfn_notify); // FIXME add new callback type
+    call.record_callback(OCL_CALLBACK_MEM_OBJECT_DESTRUCTOR,
+                         pfn_notify);
     call.record_callback_user_data(user_data);
     call.record_return_value(ret);
 
