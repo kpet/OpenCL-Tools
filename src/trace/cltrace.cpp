@@ -348,7 +348,8 @@ cl_program clLinkProgram(cl_context context, cl_uint num_devices,
     call.record_object_use(num_devices, device_list);
     call.record_string(options);
     call.record_value(num_input_programs);
-    call.record_object_use(num_input_programs, const_cast<cl_program*>(input_programs));
+    call.record_object_use(num_input_programs,
+                           const_cast<cl_program*>(input_programs));
     call.record_callback(OCL_CALLBACK_PROGRAM_BUILD, pfn_notify);
     call.record_callback_user_data(user_data);
     call.record_value_out_by_reference(errcode_ret);
