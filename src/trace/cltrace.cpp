@@ -935,8 +935,7 @@ cl_int clGetCommandQueueInfo(cl_command_queue command_queue,
     return ret;
 }
 
-cl_int clRetainCommandQueue(cl_command_queue command_queue)
-{
+cl_int clRetainCommandQueue(cl_command_queue command_queue) {
     auto ret = PFN_clRetainCommandQueue(command_queue);
 
     Call call(oclapi::command::RETAIN_COMMAND_QUEUE);
@@ -1393,8 +1392,7 @@ void clSVMFree(cl_context context, void* svm_pointer) {
     trace.record(call);
 }
 
-cl_int clUnloadCompiler(void)
-{
+cl_int clUnloadCompiler(void) {
     auto ret = PFN_clUnloadCompiler();
 
     Call call(oclapi::command::UNLOAD_COMPILER);
