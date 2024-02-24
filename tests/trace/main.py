@@ -35,8 +35,13 @@ CXX_COMPILER = 'g++'
 
 def run_cltrace(args, cwd=None):
     env = dict(os.environ)
-    env['LD_LIBRARY_PATH'] = BUILD_DIR
-    cmd = [CLTRACE] + args
+    lib_paths = [BUILD_DIR]
+    if OPENCL_LIB_DIR:
+        lib_paths.append(OPENCL_LIB_DIR)
+    env['LD_LIBRARY_PATH'] = ':'.join(lib_paths)
+    #debug = ['gdb','-ex','set follow-fork-mode child','-ex','run','-ex','bt','-ex','quit','--args']
+    debug = []
+    cmd = debug + [CLTRACE] + args
     res = subprocess.run(cmd, capture_output=True, env=env, cwd=cwd)
     return res
 
@@ -61,6 +66,7 @@ class TestCommandLineInterface(unittest.TestCase):
 
     def test_help(self):
         res = run_cltrace(['--help'])
+        print(res.stderr)
         self.assertEqual(res.returncode, 0)
         self.assertGreater(len(res.stdout), 0)
         self.assertEqual(len(res.stderr), 0)
@@ -89,12 +95,14 @@ class TestRoundTrip(unittest.TestCase):
 
         # Create test directory
         tmpdir = tempfile.mkdtemp(prefix='OpenCL-Tools-trace-')
+        print("Test dir: ", tmpdir)
 
         # Capture trace
         res = run_cltrace(['capture.trace', 'capture', CLTESTS], cwd=tmpdir)
+        print(res.stdout.decode('utf-8'))
+        print(res.stderr.decode('utf-8'))
         self.assertEqual(res.returncode, 0)
         self.assertEqual(len(res.stderr), 0)
-        print(res.stdout.decode('utf-8'))
 
         # Check a single trace file was created and get its name
         files = os.listdir(tmpdir)
@@ -123,6 +131,8 @@ class TestRoundTrip(unittest.TestCase):
 
         # Capture from generated program
         res = run_cltrace(['gen.trace', 'capture', binary], cwd=tmpdir)
+        print(res.stdout.decode('utf-8'))
+        print(res.stderr.decode('utf-8'))
         self.assertEqual(res.returncode, 0)
         self.assertEqual(len(res.stderr), 0)
         files = glob.glob(os.path.join(tmpdir,'gen.trace.*'))

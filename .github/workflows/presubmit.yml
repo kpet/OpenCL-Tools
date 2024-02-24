@@ -34,17 +34,32 @@ jobs:
       - name: Install build deps
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: sudo apt-get install libva-dev
-      - name: Install test deps
+      - name: Setup Ninja
+        uses: seanmiddleditch/gha-setup-ninja@master
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          variant: sccache
+          max-size: 2G
+          key: ${{ matrix.os }}
+      - name: Build PoCL
         if: ${{ matrix.os == 'ubuntu-latest' }}
-        run: sudo apt-get install pocl-opencl-icd
+        shell: bash
+        run: |
+          sudo apt-get install libclang-15-dev libclang-cpp15-dev libllvm15 ocl-icd-dev ocl-icd-opencl-dev
+          git clone https://github.com/pocl/pocl.git
+          cd pocl
+          mkdir build
+          cd build
+          cmake .. -G Ninja -DENABLE_TESTS=OFF -DENABLE_EXAMPLES=OFF -DENABLE_POCLCC=OFF -DENABLE_ICD=ON -DDEFAULT_ENABLE_ICD=ON \
+                            -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
+          ninja -j2
       - uses: actions/checkout@v2
         with:
           repository: KhronosGroup/OpenCL-SDK.git
           path: sdk
           ref: main
           submodules: true
-      - name: Setup Ninja
-        uses: seanmiddleditch/gha-setup-ninja@master
       - name: Build SDK
         run: |
           cd sdk
@@ -60,6 +75,11 @@ jobs:
             ninja -j2 -v
       - name: Tests
         env:
+          OCL_ICD_FILENAMES: ${{ github.workspace }}/pocl/build/lib/CL/libpocl.so
           CLTRACE_OPENCL_LIB_DIR: ${{ github.workspace }}/sdk/build/external/OpenCL-ICD-Loader/
+          #OCL_ICD_ENABLE_TRACE: 1
+          #POCL_DEBUG: all
+          POCL_BUILDING: 1
+        shell: bash
         run: |
             python tests/trace/main.py
