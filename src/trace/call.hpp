@@ -170,6 +170,17 @@ struct MemObjectMappingTracker {
 
     bool is_tracked(void* ptr) const { return m_pointers.count(ptr) != 0; }
 
+    void erase(void* ptr) {
+        if (!is_tracked(ptr)) {
+            fatal("Unknown map pointer %p\n", ptr);
+        } else {
+            auto id = m_pointers.at(ptr);
+            debug("Map pointer tracker: erased id for %p => #%llu\n", ptr,
+                  (unsigned long long)id);
+            m_pointers.erase(ptr);
+        }
+    }
+
 private:
     uint64_t m_mapping_id;
     std::unordered_map<void*, uint64_t> m_pointers;
@@ -1023,6 +1034,11 @@ struct Call {
     void record_map_pointer_use(void* ptr) {
         uint64_t id = gMemObjectMappingTracker.get(ptr);
         m_params.push_back(std::make_unique<CallParamMapPointerUse>(id));
+    }
+
+    void record_pointer_unmap(void* ptr){
+        record_map_pointer_use(ptr);
+        gMemObjectMappingTracker.erase(ptr);
     }
 
     template <typename T> void record_return_value(T value) {
