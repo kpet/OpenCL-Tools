@@ -212,6 +212,12 @@ template <> inline void holder<cl_command_buffer_khr>::deleter() {
     ASSERT_CL_SUCCESS(err);
 }
 
+template <> inline void holder<cl_semaphore_khr>::deleter() {
+    auto f = GET_EXTENSION_FUNC(clReleaseSemaphoreKHR);
+    auto err = f(m_obj);
+    ASSERT_CL_SUCCESS(err);
+}
+
 template <typename T>
 T GetPlatformInfo(cl_platform_id platform, cl_platform_info info) {
     T val;
@@ -808,6 +814,34 @@ protected:
         return val;
     }
 
+    template <typename T>
+    T GetSemaphoreInfo(cl_semaphore_khr sema, cl_semaphore_info_khr info) {
+        T val;
+        auto clGetSemaphoreInfoKHR_f =
+            GET_EXTENSION_FUNC(clGetSemaphoreInfoKHR);
+        cl_int err =
+            clGetSemaphoreInfoKHR_f(sema, info, sizeof(val), &val, nullptr);
+        EXPECT_CL_SUCCESS(err);
+        return val;
+    }
+
+    template <typename T>
+    std::vector<T> GetSemaphoreInfoVec(cl_semaphore_khr sema,
+                                       cl_semaphore_info_khr info) {
+        size_t size;
+
+        auto clGetSemaphoreInfoKHR_f =
+            GET_EXTENSION_FUNC(clGetSemaphoreInfoKHR);
+        cl_int err = clGetSemaphoreInfoKHR_f(sema, info, 0, nullptr, &size);
+        EXPECT_CL_SUCCESS(err);
+        std::vector<T> val(size / sizeof(T));
+
+        err = clGetSemaphoreInfoKHR_f(sema, info, size, val.data(), nullptr);
+        EXPECT_CL_SUCCESS(err);
+
+        return val;
+    }
+
     void SetKernelArg(cl_kernel kernel, cl_uint arg_index, size_t arg_size,
                       const void* arg_value) {
         cl_int err = clSetKernelArg(kernel, arg_index, arg_size, arg_value);
@@ -849,6 +883,16 @@ protected:
         EXPECT_CL_SUCCESS(err);
 
         return command_buffer;
+    }
+
+    holder<cl_semaphore_khr>
+    CreateSemaphoreWithProperites(cl_semaphore_properties_khr* properties) {
+        cl_int err;
+        auto f = GET_EXTENSION_FUNC(clCreateSemaphoreWithPropertiesKHR);
+        cl_semaphore_khr sema = f(m_context, properties, &err);
+        EXPECT_CL_SUCCESS(err);
+
+        return sema;
     }
 };
 
