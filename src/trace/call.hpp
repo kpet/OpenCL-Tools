@@ -1036,7 +1036,7 @@ struct Call {
         m_params.push_back(std::make_unique<CallParamMapPointerUse>(id));
     }
 
-    void record_pointer_unmap(void* ptr){
+    void record_pointer_unmap(void* ptr) {
         record_map_pointer_use(ptr);
         gMemObjectMappingTracker.erase(ptr);
     }
