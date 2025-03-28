@@ -1103,7 +1103,7 @@ cl_int clEnqueueUnmapMemObject(cl_command_queue command_queue, cl_mem memobj,
 
     call.record_object_use(command_queue);
     call.record_object_use(memobj);
-    call.record_map_pointer_use(mapped_ptr);
+    call.record_pointer_unmap(mapped_ptr);
     call.record_value(num_events_in_wait_list);
     call.record_object_use(num_events_in_wait_list,
                            const_cast<cl_event*>(event_wait_list));
@@ -1354,7 +1354,7 @@ void clSVMFree(cl_context context, void* svm_pointer) {
 
     Call call(oclapi::command::SVMFREE);
     call.record_object_use(context);
-    call.record_map_pointer_use(svm_pointer); // FIXME
+    call.record_pointer_unmap(svm_pointer); // FIXME
 
     trace.record(call);
 }
