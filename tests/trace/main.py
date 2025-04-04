@@ -32,6 +32,7 @@ OPENCL_LIB_DIR = os.environ.get('CLTRACE_OPENCL_LIB_DIR')
 CLTRACE = os.path.join(BUILD_DIR, 'cltrace')
 CLTESTS = os.path.join(BUILD_DIR, 'tests', 'trace', 'cltests')
 CXX_COMPILER = 'g++'
+TMP_FOLDER_PREFIX = 'OpenCL-Tools-trace-'
 
 def run_cltrace(args, cwd=None):
     env = dict(os.environ)
@@ -62,6 +63,14 @@ def compile_source(source, binary, cwd):
     res = subprocess.run(cmd, capture_output=True, cwd=cwd)
     return res
 
+def create_capture(tmpdir):
+    res = run_cltrace(['capture.trace', 'capture', CLTESTS], cwd=tmpdir)
+    if res.returncode != 0:
+        print("Capture failed")
+    files = os.listdir(tmpdir)
+    tracefile = files[0]
+    return tracefile
+
 class TestCommandLineInterface(unittest.TestCase):
 
     def test_help(self):
@@ -89,74 +98,88 @@ class TestCommandLineInterface(unittest.TestCase):
         self.assertGreater(len(res.stdout), 0)
         self.assertEqual(len(res.stderr), 0)
 
+    def test_info(self):
+        with tempfile.TemporaryDirectory(prefix=TMP_FOLDER_PREFIX) as tmpdir:
+            tracefile = create_capture(tmpdir)
+            res = run_cltrace([tracefile, 'info'], cwd=tmpdir)
+            self.assertEqual(res.returncode, 0)
+            self.assertEqual(len(res.stderr), 0)
+            self.assertGreater(len(res.stdout), 0)
+
+    def test_stats(self):
+        with tempfile.TemporaryDirectory(prefix=TMP_FOLDER_PREFIX) as tmpdir:
+            tracefile = create_capture(tmpdir)
+            res = run_cltrace([tracefile, 'stats'], cwd=tmpdir)
+            self.assertEqual(res.returncode, 0)
+            self.assertEqual(len(res.stderr), 0)
+            self.assertGreater(len(res.stdout), 0)
+
 class TestRoundTrip(unittest.TestCase):
 
     def test_round_trip(self):
 
         # Create test directory
-        tmpdir = tempfile.mkdtemp(prefix='OpenCL-Tools-trace-')
-        print("Test dir: ", tmpdir)
+        with tempfile.TemporaryDirectory(prefix=TMP_FOLDER_PREFIX) as tmpdir:
+            print("Test dir: ", tmpdir)
 
-        # Capture trace
-        res = run_cltrace(['capture.trace', 'capture', CLTESTS], cwd=tmpdir)
-        print(res.stdout.decode('utf-8'))
-        print(res.stderr.decode('utf-8'))
-        self.assertEqual(res.returncode, 0)
-        self.assertEqual(len(res.stderr), 0)
+            # Capture trace
+            res = run_cltrace(['capture.trace', 'capture', CLTESTS], cwd=tmpdir)
+            print(res.stdout.decode('utf-8'))
+            print(res.stderr.decode('utf-8'))
+            self.assertEqual(res.returncode, 0)
+            self.assertEqual(len(res.stderr), 0)
 
-        # Check a single trace file was created and get its name
-        files = os.listdir(tmpdir)
-        self.assertEqual(len(files), 1)
-        tracefile = files[0]
+            # Check a single trace file was created and get its name
+            files = os.listdir(tmpdir)
+            self.assertEqual(len(files), 1)
+            tracefile = files[0]
 
-        # TODO check that the trace is not empty
+            # Check that the trace is not empty
+            self.assertGreater(os.path.getsize(os.path.join(tmpdir, tracefile)), 0)
 
-        # Generate source
-        res = run_cltrace([tracefile, 'generate-source'], cwd=tmpdir)
-        self.assertEqual(res.returncode, 0)
-        self.assertEqual(len(res.stderr), 0)
-        self.assertGreater(len(res.stdout), 0)
-        srcfile = os.path.join(tmpdir, 'gen.cpp')
-        with open(srcfile, 'w') as f:
-            f.write(res.stdout.decode('utf-8'))
+            # Generate source
+            res = run_cltrace([tracefile, 'generate-source'], cwd=tmpdir)
+            self.assertEqual(res.returncode, 0)
+            self.assertEqual(len(res.stderr), 0)
+            self.assertGreater(len(res.stdout), 0)
+            srcfile = os.path.join(tmpdir, 'gen.cpp')
+            with open(srcfile, 'w') as f:
+                f.write(res.stdout.decode('utf-8'))
 
-        # Compile source
-        binary = os.path.join(tmpdir, 'gen')
-        res = compile_source(srcfile, binary, tmpdir)
-        print(res.stdout.decode('utf-8'))
-        print(res.stderr.decode('utf-8'))
-        self.assertEqual(res.returncode, 0)
-        self.assertEqual(len(res.stderr), 0)
-        self.assertEqual(len(res.stdout), 0)
+            # Compile source
+            binary = os.path.join(tmpdir, 'gen')
+            res = compile_source(srcfile, binary, tmpdir)
+            print(res.stdout.decode('utf-8'))
+            print(res.stderr.decode('utf-8'))
+            self.assertEqual(res.returncode, 0)
+            self.assertEqual(len(res.stderr), 0)
+            self.assertEqual(len(res.stdout), 0)
 
-        # Capture from generated program
-        res = run_cltrace(['gen.trace', 'capture', binary], cwd=tmpdir)
-        print(res.stdout.decode('utf-8'))
-        print(res.stderr.decode('utf-8'))
-        self.assertEqual(res.returncode, 0)
-        self.assertEqual(len(res.stderr), 0)
-        files = glob.glob(os.path.join(tmpdir,'gen.trace.*'))
-        self.assertEqual(len(files), 1)
-        gentrace = files[0]
+            # Capture from generated program
+            res = run_cltrace(['gen.trace', 'capture', binary], cwd=tmpdir)
+            print(res.stdout.decode('utf-8'))
+            print(res.stderr.decode('utf-8'))
+            self.assertEqual(res.returncode, 0)
+            self.assertEqual(len(res.stderr), 0)
+            files = glob.glob(os.path.join(tmpdir, 'gen.trace.*'))
+            self.assertEqual(len(files), 1)
+            gentrace = files[0]
 
-        # Generate source
-        res = run_cltrace([gentrace, 'generate-source'], cwd=tmpdir)
-        self.assertEqual(res.returncode, 0)
-        self.assertEqual(len(res.stderr), 0)
-        self.assertGreater(len(res.stdout), 0)
-        gensrcfile = os.path.join(tmpdir, 'regen.cpp')
-        with open(gensrcfile, 'w') as f:
-            f.write(res.stdout.decode('utf-8'))
+            # Generate source
+            res = run_cltrace([gentrace, 'generate-source'], cwd=tmpdir)
+            self.assertEqual(res.returncode, 0)
+            self.assertEqual(len(res.stderr), 0)
+            self.assertGreater(len(res.stdout), 0)
+            gensrcfile = os.path.join(tmpdir, 'regen.cpp')
+            with open(gensrcfile, 'w') as f:
+                f.write(res.stdout.decode('utf-8'))
 
-        # Compare sources
-        self.assertTrue(filecmp.cmp(srcfile, gensrcfile))
+            # Compare sources
+            self.assertTrue(filecmp.cmp(srcfile, gensrcfile))
 
-        # Cleanup
-        shutil.rmtree(tmpdir)
 
 # TODO test replay
 # TODO test trace contents
-# TODO test info, stats
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
