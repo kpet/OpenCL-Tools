@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set(SOURCES main.cpp simple.cpp)
+set(SOURCES main.cpp simple.cpp info-tests.cpp)
 
 add_executable(cltests ${SOURCES})
 target_include_directories(cltests PRIVATE
