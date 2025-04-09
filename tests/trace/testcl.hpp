@@ -29,6 +29,9 @@
 #pragma once
 
 #define COMPILER_AVAILABLE 1
+#define ENABLE_FAILING 0
+#define ENABLE_UNIMPLEMENTED 0
+#define ENABLE_UNSUPPORTED 0
 
 #define CL_TARGET_OPENCL_VERSION 300
 #define CL_USE_DEPRECATED_OPENCL_1_0_APIS
@@ -37,7 +40,9 @@
 #define CL_USE_DEPRECATED_OPENCL_2_0_APIS
 #define CL_USE_DEPRECATED_OPENCL_2_1_APIS
 #define CL_USE_DEPRECATED_OPENCL_2_2_APIS
+
 #include "CL/cl.h"
+#include "CL/cl_ext.h"
 
 // clang-format off
 static inline const char* cl_code_to_string(cl_int code) {
@@ -127,6 +132,28 @@ extern cl_platform_id gPlatform;
 #define ASSERT_CL_SUCCESS(X) ASSERT_EQ(X, CL_SUCCESS) << cl_code_to_string(X)
 #define EXPECT_CL_SUCCESS(X) EXPECT_EQ(X, CL_SUCCESS) << cl_code_to_string(X)
 
+template <typename T> T GetExtensionFunction(std::string func_name) {
+    void* func =
+        clGetExtensionFunctionAddressForPlatform(gPlatform, func_name.c_str());
+    EXPECT_NE(func, nullptr);
+    return reinterpret_cast<T>(func);
+}
+
+#define GET_EXTENSION_FUNC(FUNC_NAME)                                          \
+    GetExtensionFunction<FUNC_NAME##_fn>(#FUNC_NAME)
+
+#define TEST_BUFFER_SIZE 1024
+
+static const cl_image_format TEST_IMAGE_FORMAT = {CL_RGBA, CL_UNORM_INT8};
+
+static inline cl_image_desc get_image1D_desc(size_t image_size) {
+    cl_image_desc desc;
+    memset(&desc, 0, sizeof(desc));
+    desc.image_type = CL_MEM_OBJECT_IMAGE1D;
+    desc.image_width = image_size;
+    return desc;
+}
+
 template <typename T> struct holder {
     holder(T obj) : m_obj(obj) {}
     ~holder() {
@@ -136,6 +163,7 @@ template <typename T> struct holder {
     }
     void deleter() { assert(false); }
     operator T() { return m_obj; }
+    operator T*() { return &m_obj; }
     T release() {
         T ret = m_obj;
         m_obj = nullptr;
@@ -184,10 +212,77 @@ T GetPlatformInfo(cl_platform_id platform, cl_platform_info info) {
     return val;
 }
 
+static std::string GetPlatformInfoString(cl_platform_id platform,
+                                         cl_platform_info info) {
+    size_t size;
+    cl_int err = clGetPlatformInfo(platform, info, 0, nullptr, &size);
+    EXPECT_CL_SUCCESS(err);
+
+    std::string val("\0", size);
+    err = clGetPlatformInfo(platform, info, size, val.data(), nullptr);
+    EXPECT_CL_SUCCESS(err);
+
+    return val;
+}
+
+template <typename T>
+std::vector<T> GetPlatformInfoVec(cl_platform_id platform,
+                                  cl_platform_info info) {
+    size_t size;
+    cl_int err = clGetPlatformInfo(platform, info, 0, nullptr, &size);
+    EXPECT_CL_SUCCESS(err);
+    std::vector<T> val(size / sizeof(T));
+
+    err = clGetPlatformInfo(platform, info, size, val.data(), nullptr);
+    EXPECT_CL_SUCCESS(err);
+
+    return val;
+}
+
+template <typename T>
+T GetDeviceInfo(cl_device_id device, cl_device_info info) {
+    T val;
+    auto err = clGetDeviceInfo(device, info, sizeof(val), &val, nullptr);
+    EXPECT_CL_SUCCESS(err);
+    return val;
+}
+
+static std::string GetDeviceInfoString(cl_device_id device,
+                                       cl_device_info info) {
+    size_t size;
+    cl_int err = clGetDeviceInfo(device, info, 0, nullptr, &size);
+    EXPECT_CL_SUCCESS(err);
+
+    std::string val("\0", size);
+    err = clGetDeviceInfo(device, info, size, val.data(), nullptr);
+    EXPECT_CL_SUCCESS(err);
+
+    return val;
+}
+
+template <typename T>
+std::vector<T> GetDeviceInfoVec(cl_device_id device, cl_device_info info) {
+    size_t size;
+    cl_int err = clGetDeviceInfo(device, info, 0, nullptr, &size);
+    EXPECT_CL_SUCCESS(err);
+    std::vector<T> val(size / sizeof(T));
+
+    err = clGetDeviceInfo(device, info, size, val.data(), nullptr);
+    EXPECT_CL_SUCCESS(err);
+
+    return val;
+}
+
 static void GetDeviceAndHostTimer(cl_device_id device, cl_ulong* device_ts,
                                   cl_ulong* host_ts) {
     auto err = clGetDeviceAndHostTimer(device, device_ts, host_ts);
     ASSERT_CL_SUCCESS(err);
+}
+
+static bool IsSupportedExtension(std::string extension_name) {
+    std::string extensions =
+        GetPlatformInfoString(gPlatform, CL_PLATFORM_EXTENSIONS);
+    return extensions.find(extension_name) != std::string::npos;
 }
 
 class WithContext : public ::testing::Test {
@@ -206,6 +301,27 @@ protected:
     void TearDown() override {
         cl_int err = clReleaseContext(m_context);
         ASSERT_CL_SUCCESS(err);
+    }
+
+    template <typename T> T GetContextInfo(cl_context_info info) {
+        T val;
+        auto err =
+            clGetContextInfo(m_context, info, sizeof(val), &val, nullptr);
+        EXPECT_CL_SUCCESS(err);
+        return val;
+    }
+
+    template <typename T>
+    std::vector<T> GetContextInfoVec(cl_context_info info) {
+        size_t size;
+        cl_int err = clGetContextInfo(m_context, info, 0, nullptr, &size);
+        EXPECT_CL_SUCCESS(err);
+        std::vector<T> val(size / sizeof(T));
+
+        err = clGetContextInfo(m_context, info, size, val.data(), nullptr);
+        EXPECT_CL_SUCCESS(err);
+
+        return val;
     }
 
     holder<cl_program> CreateProgram(const char* source) {
@@ -261,6 +377,24 @@ protected:
         return program;
     }
 
+    holder<cl_program> CreateProgramWithIL(std::vector<uint8_t> il) {
+        cl_int err;
+        auto program =
+            clCreateProgramWithIL(m_context, il.data(), il.size(), &err);
+        EXPECT_CL_SUCCESS(err);
+        return program;
+    }
+
+    holder<cl_program>
+    CreateAndBuildProgramWithIL(std::vector<uint8_t> il,
+                                const char* options = nullptr) {
+        auto program = CreateProgramWithIL(il);
+
+        BuildProgram(program, options);
+
+        return program;
+    }
+
     void CompileProgram(cl_program program, const char* options = nullptr) {
         cl_int err = clCompileProgram(program, 1, &gDevice, options, 0, nullptr,
                                       nullptr, nullptr, nullptr);
@@ -305,41 +439,90 @@ protected:
     }
 
     cl_program_binary_type GetProgramBinaryType(cl_program program) {
-        cl_program_binary_type binary_type;
-        cl_int err =
-            clGetProgramBuildInfo(program, gDevice, CL_PROGRAM_BINARY_TYPE,
-                                  sizeof(binary_type), &binary_type, nullptr);
+        return GetProgramBuildInfo<cl_program_binary_type>(
+            program, CL_PROGRAM_BINARY_TYPE);
+    }
+
+    template <typename T>
+    T GetProgramInfo(cl_program program, cl_program_info info) {
+        T val;
+        auto err = clGetProgramInfo(program, info, sizeof(val), &val, nullptr);
         EXPECT_CL_SUCCESS(err);
-        return binary_type;
+        return val;
+    }
+
+    static std::string GetProgramInfoString(cl_program program,
+                                            cl_program_info info) {
+        size_t size;
+        cl_int err = clGetProgramInfo(program, info, 0, nullptr, &size);
+        EXPECT_CL_SUCCESS(err);
+
+        std::vector<char> val(size);
+        err = clGetProgramInfo(program, info, size, val.data(), nullptr);
+        EXPECT_CL_SUCCESS(err);
+        if (val.begin() == val.end()) {
+            return std::string("");
+        }
+        return std::string(val.begin(), val.end() - 1);
+    }
+
+    template <typename T>
+    std::vector<T> GetProgramInfoVec(cl_program program, cl_program_info info) {
+        size_t size;
+        cl_int err = clGetProgramInfo(program, info, 0, nullptr, &size);
+        EXPECT_CL_SUCCESS(err);
+        std::vector<T> val(size / sizeof(T));
+
+        err = clGetProgramInfo(program, info, size, val.data(), nullptr);
+        EXPECT_CL_SUCCESS(err);
+
+        return val;
+    }
+
+    template <typename T>
+    T GetProgramBuildInfo(cl_program program, cl_program_build_info info) {
+        T val;
+        auto err = clGetProgramBuildInfo(program, gDevice, info, sizeof(val),
+                                         &val, nullptr);
+        EXPECT_CL_SUCCESS(err);
+        return val;
+    }
+
+    std::string GetProgramBuildInfoString(cl_program program,
+                                          cl_program_build_info info) {
+        size_t size;
+        cl_int err =
+            clGetProgramBuildInfo(program, gDevice, info, 0, nullptr, &size);
+        EXPECT_CL_SUCCESS(err);
+
+        std::string val("\0", size);
+        err = clGetProgramBuildInfo(program, gDevice, info, size, val.data(),
+                                    nullptr);
+        EXPECT_CL_SUCCESS(err);
+
+        return val;
     }
 
     std::vector<uint8_t> GetProgramBinary(cl_program program) {
-        std::vector<uint8_t> binary;
-        size_t binary_size;
-        cl_int err =
-            clGetProgramInfo(program, CL_PROGRAM_BINARY_SIZES,
-                             sizeof(binary_size), &binary_size, nullptr);
-        EXPECT_CL_SUCCESS(err);
-        binary.resize(binary_size);
+        size_t size_of_binary_sizes;
+        clGetProgramInfo(program, CL_PROGRAM_BINARY_SIZES, 0, nullptr,
+                         &size_of_binary_sizes);
+
+        std::vector<size_t> binary_sizes(size_of_binary_sizes / sizeof(size_t));
+        clGetProgramInfo(program, CL_PROGRAM_BINARY_SIZES, size_of_binary_sizes,
+                         binary_sizes.data(), nullptr);
+
+        size_t size;
+        clGetProgramInfo(program, CL_PROGRAM_BINARIES, 0, nullptr, &size);
+        std::vector<uint8_t> binary(binary_sizes[0]);
         unsigned char* data = binary.data();
-        err = clGetProgramInfo(program, CL_PROGRAM_BINARIES, binary_size, &data,
-                               nullptr);
-        EXPECT_CL_SUCCESS(err);
+
+        clGetProgramInfo(program, CL_PROGRAM_BINARIES, size, &data, nullptr);
         return binary;
     }
 
     std::string GetProgramBuildLog(cl_program program) {
-        size_t log_size;
-        cl_int err = clGetProgramBuildInfo(
-            program, gDevice, CL_PROGRAM_BUILD_LOG, 0, nullptr, &log_size);
-        EXPECT_CL_SUCCESS(err);
-        std::string build_log;
-        build_log.resize(log_size);
-        auto data_ptr = const_cast<char*>(build_log.c_str());
-        err = clGetProgramBuildInfo(program, gDevice, CL_PROGRAM_BUILD_LOG,
-                                    log_size, data_ptr, nullptr);
-        EXPECT_CL_SUCCESS(err);
-        return build_log;
+        return GetProgramBuildInfoString(program, CL_PROGRAM_BUILD_LOG);
     }
 
     holder<cl_kernel> CreateKernel(const char* source, const char* name) {
@@ -368,6 +551,75 @@ protected:
         auto kernel = clCreateKernel(program, name, &err);
         EXPECT_CL_SUCCESS(err);
         return kernel;
+    }
+
+    holder<cl_kernel> CloneKernel(cl_kernel kernel) {
+        cl_int err;
+        auto cloned_kernel = clCloneKernel(kernel, &err);
+        EXPECT_CL_SUCCESS(err);
+        return cloned_kernel;
+    }
+
+    template <typename T>
+    T GetKernelInfo(cl_kernel kernel, cl_kernel_info info) {
+        T val;
+        auto err = clGetKernelInfo(kernel, info, sizeof(val), &val, nullptr);
+        EXPECT_CL_SUCCESS(err);
+        return val;
+    }
+
+    std::string GetKernelInfoString(cl_kernel kernel, cl_kernel_info info) {
+        size_t size;
+        cl_int err = clGetKernelInfo(kernel, info, 0, nullptr, &size);
+        EXPECT_CL_SUCCESS(err);
+
+        std::string val("\0", size);
+        err = clGetKernelInfo(kernel, info, size, val.data(), nullptr);
+        EXPECT_CL_SUCCESS(err);
+
+        return val;
+    }
+
+    template <typename T>
+    T GetKernelArgInfo(cl_kernel kernel, cl_uint arg_index,
+                       cl_kernel_arg_info info) {
+        T val;
+        auto err = clGetKernelArgInfo(kernel, arg_index, info, sizeof(val),
+                                      &val, nullptr);
+        if (CL_KERNEL_ARG_INFO_NOT_AVAILABLE != err) {
+            EXPECT_CL_SUCCESS(err);
+        }
+        return val;
+    }
+
+    std::string GetKernelArgInfoString(cl_kernel kernel, cl_uint arg_index,
+                                       cl_kernel_arg_info info) {
+        size_t size;
+        cl_int err =
+            clGetKernelArgInfo(kernel, arg_index, info, 0, nullptr, &size);
+        if (CL_KERNEL_ARG_INFO_NOT_AVAILABLE == err) {
+            return std::string("");
+        }
+        EXPECT_CL_SUCCESS(err);
+
+        std::string val("\0", size);
+        err = clGetKernelArgInfo(kernel, arg_index, info, size, val.data(),
+                                 nullptr);
+        if (CL_KERNEL_ARG_INFO_NOT_AVAILABLE == err) {
+            return std::string("");
+        }
+        EXPECT_CL_SUCCESS(err);
+
+        return val;
+    }
+
+    template <typename T>
+    T GetKernelWorkGroupInfo(cl_kernel kernel, cl_kernel_work_group_info info) {
+        T val;
+        auto err = clGetKernelWorkGroupInfo(kernel, gDevice, info, sizeof(val),
+                                            &val, nullptr);
+        EXPECT_CL_SUCCESS(err);
+        return val;
     }
 
     holder<cl_command_queue>
@@ -409,12 +661,40 @@ protected:
         return mem;
     }
 
+    holder<cl_mem> CreateSubBuffer(cl_mem buffer, cl_mem_flags flags,
+                                   cl_buffer_region* sub_buffer_info) {
+        cl_int err;
+        auto sub_buffer = clCreateSubBuffer(
+            buffer, flags, CL_BUFFER_CREATE_TYPE_REGION, sub_buffer_info, &err);
+        EXPECT_CL_SUCCESS(err);
+        return sub_buffer;
+    }
+
+    holder<cl_mem> CreatePipe(cl_mem_flags flags, cl_uint pipe_packet_size,
+                              cl_uint pipe_max_packets,
+                              const cl_pipe_properties* properties) {
+        cl_int err;
+        auto pipe = clCreatePipe(m_context, flags, pipe_packet_size,
+                                 pipe_max_packets, properties, &err);
+        EXPECT_CL_SUCCESS(err);
+        return pipe;
+    }
+
     holder<cl_sampler> CreateSampler(cl_bool normalized_coords,
                                      cl_addressing_mode addressing_mode,
                                      cl_filter_mode filter_mode) {
         cl_int err;
         auto sampler = clCreateSampler(m_context, normalized_coords,
                                        addressing_mode, filter_mode, &err);
+        EXPECT_CL_SUCCESS(err);
+        return sampler;
+    }
+
+    holder<cl_sampler>
+    CreateSamplerWithProperties(const cl_sampler_properties* properties) {
+        cl_int err;
+        auto sampler =
+            clCreateSamplerWithProperties(m_context, properties, &err);
         EXPECT_CL_SUCCESS(err);
         return sampler;
     }
@@ -430,30 +710,63 @@ protected:
         return mem;
     }
 
-    void GetImageInfo(cl_mem image, cl_image_info param_name,
-                      size_t param_value_size, void* param_value,
-                      size_t* param_value_size_ret) {
-        cl_int err = clGetImageInfo(image, param_name, param_value_size,
-                                    param_value, param_value_size_ret);
-        ASSERT_CL_SUCCESS(err);
+    holder<cl_mem> CreateImageWithProperties(
+        const cl_mem_properties* properties, cl_mem_flags flags,
+        const cl_image_format* image_format, const cl_image_desc* image_desc,
+        void* host_ptr = nullptr) {
+        cl_int err;
+        auto mem = clCreateImageWithProperties(m_context, properties, flags,
+                                               image_format, image_desc,
+                                               host_ptr, &err);
+        EXPECT_CL_SUCCESS(err);
+        return mem;
     }
 
-    void GetMemObjectInfo(cl_mem mem, cl_mem_info param_name,
-                          size_t param_value_size, void* param_value,
-                          size_t* param_value_size_ret) {
-        cl_int err = clGetMemObjectInfo(mem, param_name, param_value_size,
-                                        param_value, param_value_size_ret);
-        ASSERT_CL_SUCCESS(err);
+    template <typename T> T GetImageInfo(cl_mem image, cl_image_info info) {
+        T val;
+        cl_int err = clGetImageInfo(image, info, sizeof(T), &val, nullptr);
+        EXPECT_CL_SUCCESS(err);
+        return val;
     }
 
-    void GetSupportedImageFormats(cl_mem_object_type image_type,
-                                  cl_uint num_entries,
-                                  cl_image_format* image_formats,
-                                  cl_uint* num_image_formats) {
-        cl_int err =
-            clGetSupportedImageFormats(m_context, 0, image_type, num_entries,
-                                       image_formats, num_image_formats);
-        ASSERT_CL_SUCCESS(err);
+    template <typename T>
+    T GetSamplerInfo(cl_sampler sampler, cl_sampler_info info) {
+        T val;
+        cl_int err = clGetSamplerInfo(sampler, info, sizeof(T), &val, nullptr);
+        EXPECT_CL_SUCCESS(err);
+        return val;
+    }
+
+    template <typename T> T GetPipeInfo(cl_mem mem, cl_pipe_info info) {
+        T val;
+        auto err = clGetPipeInfo(mem, info, sizeof(val), &val, nullptr);
+        EXPECT_CL_SUCCESS(err);
+        return val;
+    }
+
+    template <typename T> T GetMemObjectInfo(cl_mem mem, cl_mem_info info) {
+        T val;
+        auto err = clGetMemObjectInfo(mem, info, sizeof(val), &val, nullptr);
+        EXPECT_CL_SUCCESS(err);
+        return val;
+    }
+
+    std::vector<cl_image_format>
+    GetSupportedImageFormats(cl_mem_object_type image_type,
+                             cl_mem_flags flags) {
+
+        cl_uint num_image_formats = 0;
+        cl_int err = clGetSupportedImageFormats(m_context, flags, image_type, 0,
+                                                nullptr, &num_image_formats);
+        EXPECT_CL_SUCCESS(err);
+
+        std::vector<cl_image_format> val(num_image_formats);
+        err =
+            clGetSupportedImageFormats(m_context, flags, image_type,
+                                       num_image_formats, val.data(), nullptr);
+        EXPECT_CL_SUCCESS(err);
+
+        return val;
     }
 
     void SetKernelArg(cl_kernel kernel, cl_uint arg_index, size_t arg_size,
@@ -477,6 +790,14 @@ protected:
     void SetKernelArg(cl_kernel kernel, cl_uint arg_index, cl_uint* val) {
         SetKernelArg(kernel, arg_index, sizeof(*val), val);
     }
+
+    void* SVMAlloc(cl_svm_mem_flags flags, size_t size, cl_uint allignment) {
+        void* buffer = clSVMAlloc(m_context, flags, size, allignment);
+        EXPECT_NE(nullptr, buffer);
+
+        return buffer;
+    }
+    void SVMFree(void* svm_pointer) { clSVMFree(m_context, svm_pointer); }
 };
 
 class WithCommandQueue : public WithContext {
@@ -518,32 +839,28 @@ protected:
 
     void WaitForEvent(cl_event event) { WaitForEvents(1, &event); }
 
-    void GetEventProfilingInfo(cl_event event, cl_profiling_info param_name,
-                               size_t param_value_size, void* param_value,
-                               size_t* param_value_size_ret) {
-        cl_int err =
-            clGetEventProfilingInfo(event, param_name, param_value_size,
-                                    param_value, param_value_size_ret);
-        ASSERT_CL_SUCCESS(err);
-    }
-
-    void GetEventInfo(cl_event event, cl_event_info param_name,
-                      size_t param_value_size, void* param_value,
-                      size_t* param_value_size_ret) {
-        cl_int err = clGetEventInfo(event, param_name, param_value_size,
-                                    param_value, param_value_size_ret);
-        ASSERT_CL_SUCCESS(err);
+    template <typename T> T GetEventInfo(cl_event event, cl_event_info info) {
+        T val;
+        cl_int err = clGetEventInfo(event, info, sizeof(T), &val, nullptr);
+        EXPECT_CL_SUCCESS(err);
+        return val;
     }
 
     template <typename T>
-    void GetEventInfo(cl_event event, cl_event_info param_name, T* out_val) {
-        GetEventInfo(event, param_name, sizeof(T), out_val, nullptr);
+    T GetEventProfilingInfo(cl_event event, cl_profiling_info info) {
+        T val;
+        cl_int err =
+            clGetEventProfilingInfo(event, info, sizeof(T), &val, nullptr);
+        EXPECT_CL_SUCCESS(err);
+        return val;
     }
 
-    void GetEventProfilingInfo(cl_event event, cl_profiling_info param_name,
-                               cl_ulong* val_ret) {
-        GetEventProfilingInfo(event, param_name, sizeof(*val_ret), val_ret,
-                              nullptr);
+    template <typename T> T GetCommandQueueInfo(cl_command_queue_info info) {
+        T val;
+        cl_int err =
+            clGetCommandQueueInfo(m_queue, info, sizeof(T), &val, nullptr);
+        EXPECT_CL_SUCCESS(err);
+        return val;
     }
 
     void EnqueueNDRangeKernel(cl_kernel kernel, cl_uint work_dim,
@@ -566,6 +883,17 @@ protected:
         EnqueueNDRangeKernel(kernel, work_dim, global_work_offset,
                              global_work_size, local_work_size, 0, nullptr,
                              nullptr);
+    }
+
+    void EnqueueTask(cl_kernel kernel, cl_uint num_events_in_wait_list,
+                     const cl_event* event_wait_list, cl_event* event) {
+        auto err = clEnqueueTask(m_queue, kernel, num_events_in_wait_list,
+                                 event_wait_list, event);
+        ASSERT_CL_SUCCESS(err);
+    }
+
+    void EnqueueTask(cl_kernel kernel) {
+        EnqueueTask(kernel, 0, nullptr, nullptr);
     }
 
     template <typename T>

@@ -8,7 +8,7 @@ on:
 jobs:
   format:
     name: Code formatting check
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Install packages
         run: |
@@ -29,14 +29,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-24.04]
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
           submodules: true
       - name: Install build deps
-        if: ${{ matrix.os == 'ubuntu-latest' }}
+        if: ${{ matrix.os == 'ubuntu-24.04' }}
         run: sudo apt-get install libva-dev
       - name: Setup Ninja
         uses: seanmiddleditch/gha-setup-ninja@master
@@ -47,10 +47,10 @@ jobs:
           max-size: 2G
           key: ${{ matrix.os }}
       - name: Build PoCL
-        if: ${{ matrix.os == 'ubuntu-latest' }}
+        if: ${{ matrix.os == 'ubuntu-24.04' }}
         shell: bash
         run: |
-          sudo apt-get install libclang-15-dev libclang-cpp15-dev libllvm15 ocl-icd-dev ocl-icd-opencl-dev
+          sudo apt-get install libclang-dev libclang-cpp-dev ocl-icd-dev ocl-icd-opencl-dev
           git clone https://github.com/pocl/pocl.git
           cd pocl
           mkdir build

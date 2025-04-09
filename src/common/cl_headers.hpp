@@ -14,7 +14,9 @@
 
 #pragma once
 
+#define CL_ENABLE_BETA_EXTENSIONS
 #define CL_TARGET_OPENCL_VERSION 300
 #include "CL/cl.h"
 #include "CL/cl_ext.h"
+#include "CL/cl_gl.h"
 #include "CL/cl_va_api_media_sharing_intel.h"
