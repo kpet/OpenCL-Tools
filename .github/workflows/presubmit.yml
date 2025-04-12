@@ -31,7 +31,7 @@ jobs:
       matrix:
         os: [ubuntu-24.04]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: true
@@ -58,7 +58,7 @@ jobs:
           cmake .. -G Ninja -DENABLE_TESTS=OFF -DENABLE_EXAMPLES=OFF -DENABLE_POCLCC=OFF -DENABLE_ICD=ON -DDEFAULT_ENABLE_ICD=ON \
                             -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
           ninja -j2
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           repository: KhronosGroup/OpenCL-SDK.git
           path: sdk
