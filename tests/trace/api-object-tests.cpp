@@ -111,7 +111,8 @@ TEST_F(WithContext, CreateCommandQueueWithPropertiesKHRTest) {
         CL_QUEUE_PROPERTIES, CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, 0};
 
     cl_int err;
-    auto clCreateCommandQueueWithPropertiesKHR_f = GET_EXTENSION_FUNC(clCreateCommandQueueWithPropertiesKHR);
+    auto clCreateCommandQueueWithPropertiesKHR_f =
+        GET_EXTENSION_FUNC(clCreateCommandQueueWithPropertiesKHR);
     cl_command_queue command_queue = clCreateCommandQueueWithPropertiesKHR_f(
         m_context, gDevice, &properties[0], &err);
     ASSERT_CL_SUCCESS(err);
