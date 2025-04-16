@@ -40,6 +40,7 @@
 #define CL_USE_DEPRECATED_OPENCL_2_0_APIS
 #define CL_USE_DEPRECATED_OPENCL_2_1_APIS
 #define CL_USE_DEPRECATED_OPENCL_2_2_APIS
+#define CL_ENABLE_BETA_EXTENSIONS
 
 #include "CL/cl.h"
 #include "CL/cl_ext.h"
@@ -201,6 +202,13 @@ template <> inline void holder<cl_event>::deleter() {
 
 template <> inline void holder<cl_command_queue>::deleter() {
     auto err = clReleaseCommandQueue(m_obj);
+    ASSERT_CL_SUCCESS(err);
+}
+
+template <> inline void holder<cl_command_buffer_khr>::deleter() {
+    auto clReleaseCommandBufferKHR_f =
+        GET_EXTENSION_FUNC(clReleaseCommandBufferKHR);
+    auto err = clReleaseCommandBufferKHR_f(m_obj);
     ASSERT_CL_SUCCESS(err);
 }
 
@@ -769,6 +777,37 @@ protected:
         return val;
     }
 
+    template <typename T>
+    T GetCommandBufferInfo(cl_command_buffer_khr command_buffer,
+                           cl_command_buffer_info_khr info) {
+        T val;
+        auto clGetCommandBufferInfoKHR_f =
+            GET_EXTENSION_FUNC(clGetCommandBufferInfoKHR);
+        cl_int err = clGetCommandBufferInfoKHR_f(command_buffer, info,
+                                                 sizeof(val), &val, nullptr);
+        EXPECT_CL_SUCCESS(err);
+        return val;
+    }
+
+    template <typename T>
+    std::vector<T> GetCommandBufferInfoVec(cl_command_buffer_khr command_buffer,
+                                           cl_command_buffer_info_khr info) {
+        size_t size;
+
+        auto clGetCommandBufferInfoKHR_f =
+            GET_EXTENSION_FUNC(clGetCommandBufferInfoKHR);
+        cl_int err = clGetCommandBufferInfoKHR_f(command_buffer, info, 0,
+                                                 nullptr, &size);
+        EXPECT_CL_SUCCESS(err);
+        std::vector<T> val(size / sizeof(T));
+
+        err = clGetCommandBufferInfoKHR_f(command_buffer, info, size,
+                                          val.data(), nullptr);
+        EXPECT_CL_SUCCESS(err);
+
+        return val;
+    }
+
     void SetKernelArg(cl_kernel kernel, cl_uint arg_index, size_t arg_size,
                       const void* arg_value) {
         cl_int err = clSetKernelArg(kernel, arg_index, arg_size, arg_value);
@@ -798,6 +837,19 @@ protected:
         return buffer;
     }
     void SVMFree(void* svm_pointer) { clSVMFree(m_context, svm_pointer); }
+
+    holder<cl_command_buffer_khr>
+    CreateCommandBuffer(cl_uint num_queues, cl_command_queue* queues,
+                        cl_command_buffer_properties_khr* properties) {
+        cl_int err;
+        auto clCreateCommandBufferKHR_f =
+            GET_EXTENSION_FUNC(clCreateCommandBufferKHR);
+        cl_command_buffer_khr command_buffer =
+            clCreateCommandBufferKHR_f(num_queues, queues, properties, &err);
+        EXPECT_CL_SUCCESS(err);
+
+        return command_buffer;
+    }
 };
 
 class WithCommandQueue : public WithContext {

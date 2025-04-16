@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set(SOURCES main.cpp simple.cpp info-tests.cpp api-object-tests.cpp memobjects-tests.cpp image-tests.cpp kernel-tests.cpp event-tests.cpp svm-tests.cpp command-tests.cpp build-tests.cpp)
+set(SOURCES main.cpp simple.cpp info-tests.cpp api-object-tests.cpp memobjects-tests.cpp image-tests.cpp kernel-tests.cpp event-tests.cpp svm-tests.cpp command-tests.cpp build-tests.cpp command-buffer-tests.cpp)
 
 add_executable(cltests ${SOURCES})
 target_include_directories(cltests PRIVATE
