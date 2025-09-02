@@ -14,7 +14,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y clang-format clang-format-15
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Check format
@@ -31,7 +31,7 @@ jobs:
       matrix:
         os: [ubuntu-24.04]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
           submodules: true
@@ -58,7 +58,7 @@ jobs:
           cmake .. -G Ninja -DENABLE_TESTS=OFF -DENABLE_EXAMPLES=OFF -DENABLE_POCLCC=OFF -DENABLE_ICD=ON -DDEFAULT_ENABLE_ICD=ON \
                             -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
           ninja -j2
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           repository: KhronosGroup/OpenCL-SDK.git
           path: sdk
